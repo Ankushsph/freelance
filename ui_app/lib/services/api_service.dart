@@ -107,32 +107,50 @@ class ApiService {
     required String email,
     required String purpose,
   }) async {
-    try {
-      final response = await http.post(
-        Uri.parse('$baseUrl/otp/send'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'email': email, 'purpose': purpose}),
-      ).timeout(
-        const Duration(seconds: 60),
-        onTimeout: () {
-          throw Exception('Request timed out. Server might be starting up. Please try again in 30 seconds.');
-        },
-      );
-      
-      if (response.statusCode != 200) {
-        final error = jsonDecode(response.body)['message'] ?? 'Failed to send OTP';
-        throw Exception(error);
+    int retries = 3;
+    Duration retryDelay = const Duration(seconds: 2);
+    
+    for (int i = 0; i < retries; i++) {
+      try {
+        final response = await http.post(
+          Uri.parse('$baseUrl/otp/send'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'email': email, 'purpose': purpose}),
+        ).timeout(
+          const Duration(seconds: 90),
+          onTimeout: () {
+            throw Exception('Server is starting up. Please wait and try again.');
+          },
+        );
+        
+        if (response.statusCode != 200) {
+          final error = jsonDecode(response.body)['message'] ?? 'Failed to send OTP';
+          throw Exception(error);
+        }
+        
+        // Return OTP for development (backend sends it in response)
+        final data = jsonDecode(response.body);
+        return data['otp'] as String?;
+      } catch (e) {
+        if (i == retries - 1) {
+          // Last retry failed
+          if (e.toString().contains('SocketException') || 
+              e.toString().contains('connection abort') ||
+              e.toString().contains('ClientException')) {
+            throw Exception('Cannot connect to server. Please check your internet connection and try again.');
+          }
+          if (e.toString().contains('timed out')) {
+            throw Exception('Server is waking up. Please wait 30 seconds and try again.');
+          }
+          rethrow;
+        }
+        // Wait before retry
+        await Future.delayed(retryDelay);
+        retryDelay *= 2; // Exponential backoff
       }
-      
-      // Return OTP for development (backend sends it in response)
-      final data = jsonDecode(response.body);
-      return data['otp'] as String?;
-    } catch (e) {
-      if (e.toString().contains('timed out')) {
-        throw Exception('Server is waking up. Please wait 30 seconds and try again.');
-      }
-      rethrow;
     }
+    
+    throw Exception('Failed to send OTP after multiple attempts');
   }
 
   static Future<void> verifyOtp({

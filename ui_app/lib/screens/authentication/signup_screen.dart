@@ -33,6 +33,14 @@ class _SignupScreenState extends State<SignupScreen> {
     setState(() => isLoading = true);
 
     try {
+      // Show progress message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Connecting to server..."),
+          duration: Duration(seconds: 2),
+        ),
+      );
+      
       // First send OTP to the user's email
       final otp = await ApiService.sendOtp(
         email: _emailController.text.trim(),
@@ -45,12 +53,13 @@ class _SignupScreenState extends State<SignupScreen> {
       if (otp != null) {
         showDialog(
           context: context,
+          barrierDismissible: false,
           builder: (context) => AlertDialog(
-            title: const Text('OTP Sent'),
+            title: const Text('OTP Sent ✅'),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Text('Your OTP is:'),
+                const Text('Check your email or use:'),
                 const SizedBox(height: 10),
                 Text(
                   otp,
@@ -58,6 +67,7 @@ class _SignupScreenState extends State<SignupScreen> {
                     fontSize: 32,
                     fontWeight: FontWeight.bold,
                     letterSpacing: 8,
+                    color: Colors.blue,
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -117,13 +127,13 @@ class _SignupScreenState extends State<SignupScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(errorMessage),
-          duration: const Duration(seconds: 5),
-          action: errorMessage.contains('waking up') 
-            ? SnackBarAction(
-                label: 'Retry',
-                onPressed: _signup,
-              )
-            : null,
+          duration: const Duration(seconds: 6),
+          backgroundColor: Colors.red,
+          action: SnackBarAction(
+            label: 'Retry',
+            textColor: Colors.white,
+            onPressed: _signup,
+          ),
         ),
       );
     } finally {
