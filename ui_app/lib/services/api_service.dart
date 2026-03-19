@@ -103,7 +103,7 @@ class ApiService {
     await prefs.setString(AuthKeys.userEmail, email);
   }
 
-  static Future<void> sendOtp({
+  static Future<String?> sendOtp({
     required String email,
     required String purpose,
   }) async {
@@ -115,6 +115,10 @@ class ApiService {
     if (response.statusCode != 200) {
       throw Exception('Failed to send OTP');
     }
+    
+    // Return OTP for development (backend sends it in response)
+    final data = jsonDecode(response.body);
+    return data['otp'] as String?;
   }
 
   static Future<void> verifyOtp({

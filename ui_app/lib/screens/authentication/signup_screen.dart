@@ -34,28 +34,81 @@ class _SignupScreenState extends State<SignupScreen> {
 
     try {
       // First send OTP to the user's email
-      await ApiService.sendOtp(
+      final otp = await ApiService.sendOtp(
         email: _emailController.text.trim(),
         purpose: 'signup',
       );
 
       if (!mounted) return;
 
-      // Navigate to OTP screen with all required data
-      Navigator.pushNamed(
-        context,
-        '/otp',
-        arguments: {
-          'email': _emailController.text.trim(),
-          'purpose': 'signup',
-          'userData': {
-            'name': _nameController.text.trim(),
+      // Show OTP in a dialog for development
+      if (otp != null) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('OTP Sent'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text('Your OTP is:'),
+                const SizedBox(height: 10),
+                Text(
+                  otp,
+                  style: const TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 8,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                const Text(
+                  'Enter this OTP on the next screen',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  // Navigate to OTP screen
+                  Navigator.pushNamed(
+                    context,
+                    '/otp',
+                    arguments: {
+                      'email': _emailController.text.trim(),
+                      'purpose': 'signup',
+                      'userData': {
+                        'name': _nameController.text.trim(),
+                        'email': _emailController.text.trim(),
+                        'number': int.parse(_mobileController.text.trim()),
+                        'password': _passwordController.text.trim(),
+                      },
+                    },
+                  );
+                },
+                child: const Text('Continue'),
+              ),
+            ],
+          ),
+        );
+      } else {
+        // If no OTP in response, just navigate
+        Navigator.pushNamed(
+          context,
+          '/otp',
+          arguments: {
             'email': _emailController.text.trim(),
-            'number': int.parse(_mobileController.text.trim()),
-            'password': _passwordController.text.trim(),
+            'purpose': 'signup',
+            'userData': {
+              'name': _nameController.text.trim(),
+              'email': _emailController.text.trim(),
+              'number': int.parse(_mobileController.text.trim()),
+              'password': _passwordController.text.trim(),
+            },
           },
-        },
-      );
+        );
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(e.toString())),
