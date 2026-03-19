@@ -5,7 +5,9 @@
   "private": true,
   "scripts": {
     "dev": "node --loader ts-node/esm index.ts",
-    "dev:tsx": "tsx index.ts"
+    "dev:tsx": "tsx index.ts",
+    "start": "tsx index.ts",
+    "build": "tsc"
   },
   "devDependencies": {
     "@types/bcryptjs": "^3.0.0",
