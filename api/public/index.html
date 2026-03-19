@@ -1,0 +1,1246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Konnect Social Poster</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f0f2f5;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            opacity: 0.9;
+        }
+
+        .logout-btn {
+            float: right;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .logout-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        /* Login Screen */
+        .login-screen {
+            max-width: 400px;
+            margin: 100px auto;
+            background: white;
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .login-screen h2 {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        /* Dashboard */
+        .dashboard {
+            display: none;
+        }
+
+        /* Connection Status */
+        .connection-status {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .connection-status h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .platform-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+
+        .platform-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .platform-icon.instagram {
+            background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+        }
+
+        .platform-icon.facebook {
+            background: #1877f2;
+        }
+
+        .platform-icon.linkedin {
+            background: #0077b5;
+        }
+
+        .platform-icon.twitter {
+            background: #000000;
+        }
+
+        .platform-info {
+            flex: 1;
+        }
+
+        .platform-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .platform-status {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .platform-status.connected {
+            color: #28a745;
+        }
+
+        .platform-status.disconnected {
+            color: #dc3545;
+        }
+
+        .connect-btn {
+            padding: 8px 16px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .connect-btn:hover {
+            background: #5a6fd6;
+        }
+
+        /* Post Form */
+        .post-form {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .post-form h3 {
+            margin-bottom: 20px;
+            color: #333;
+            font-size: 20px;
+        }
+
+        .photo-upload {
+            border: 2px dashed #ccc;
+            border-radius: 10px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .photo-upload:hover {
+            border-color: #667eea;
+            background: #f8f9ff;
+        }
+
+        .photo-upload.has-file {
+            border-color: #28a745;
+            background: #f0fff4;
+        }
+
+        .photo-upload input[type="file"] {
+            display: none;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .preview-image {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        .platform-select {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .platform-checkbox {
+            display: flex;
+            align-items: center;
+            padding: 12px 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 2px solid transparent;
+        }
+
+        .platform-checkbox:hover {
+            background: #e9ecef;
+        }
+
+        .platform-checkbox.selected {
+            background: #e7f3ff;
+            border-color: #667eea;
+        }
+
+        .platform-checkbox input {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+        }
+
+        .tags-input {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 8px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            min-height: 50px;
+        }
+
+        .tags-input input {
+            border: none;
+            outline: none;
+            flex: 1;
+            min-width: 100px;
+            padding: 5px;
+        }
+
+        .tag {
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .tag button {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 0;
+            width: 18px;
+            height: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .schedule-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+
+        .schedule-options {
+            display: flex;
+            gap: 20px;
+            margin-top: 10px;
+        }
+
+        .schedule-option {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .schedule-option input[type="radio"] {
+            width: 18px;
+            height: 18px;
+        }
+
+        .datetime-picker {
+            margin-top: 10px;
+        }
+
+        /* Posts List */
+        .posts-section {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .posts-section h3 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .post-item {
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+
+        .post-item:hover {
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .post-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .post-status {
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .post-status.published {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .post-status.scheduled {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .post-status.pending {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .post-status.publishing {
+            background: #cce5ff;
+            color: #004085;
+        }
+
+        .post-status.failed {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .post-status.partially_failed {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .post-content {
+            color: #333;
+            margin-bottom: 10px;
+            white-space: pre-wrap;
+        }
+
+        .post-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+
+        .post-platforms {
+            display: flex;
+            gap: 8px;
+        }
+
+        .platform-badge {
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            background: #e9ecef;
+            color: #495057;
+        }
+
+        .post-actions {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .post-actions button {
+            padding: 8px 16px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .post-actions button:hover {
+            background: #f8f9fa;
+        }
+
+        .post-actions .btn-danger {
+            color: #dc3545;
+            border-color: #dc3545;
+        }
+
+        .post-actions .btn-danger:hover {
+            background: #dc3545;
+            color: white;
+        }
+
+        .post-image {
+            max-width: 200px;
+            max-height: 150px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+
+        /* Alert Messages */
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+
+        /* Responsive */
+        @media (max-width: 600px) {
+            .platform-select {
+                flex-direction: column;
+            }
+            
+            .schedule-options {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Screen -->
+    <div class="login-screen" id="loginScreen">
+        <h2>🔐 Login to Konnect</h2>
+        <div class="alert" id="loginAlert"></div>
+        <form id="loginForm">
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" id="loginEmail" required placeholder="Enter your email">
+            </div>
+            <div class="form-group">
+                <label>Password</label>
+                <input type="password" id="loginPassword" required placeholder="Enter your password">
+            </div>
+            <button type="submit" class="btn">Login</button>
+        </form>
+    </div>
+
+    <!-- Dashboard -->
+    <div class="dashboard" id="dashboard">
+        <div class="container">
+            <div class="header">
+                <button class="logout-btn" onclick="logout()">Logout</button>
+                <h1>📱 Konnect Social Poster</h1>
+                <p>Post to Instagram and Facebook with ease</p>
+            </div>
+
+            <div class="alert" id="dashboardAlert"></div>
+
+            <!-- Connection Status -->
+            <div class="connection-status">
+                <h3>🔗 Connected Accounts</h3>
+                <div class="platform-item">
+                    <div class="platform-icon instagram">IG</div>
+                    <div class="platform-info">
+                        <div class="platform-name">Instagram</div>
+                        <div class="platform-status" id="instagramStatus">Checking...</div>
+                    </div>
+                    <button class="connect-btn" id="instagramConnectBtn" onclick="connectInstagram()">Connect</button>
+                </div>
+                <div class="platform-item">
+                    <div class="platform-icon facebook">FB</div>
+                    <div class="platform-info">
+                        <div class="platform-name">Facebook</div>
+                        <div class="platform-status" id="facebookStatus">Checking...</div>
+                    </div>
+                    <button class="connect-btn" id="facebookConnectBtn" onclick="connectFacebook()">Connect</button>
+                </div>
+                <div class="platform-item">
+                    <div class="platform-icon linkedin">in</div>
+                    <div class="platform-info">
+                        <div class="platform-name">LinkedIn</div>
+                        <div class="platform-status" id="linkedinStatus">Checking...</div>
+                    </div>
+                    <button class="connect-btn" id="linkedinConnectBtn" onclick="connectLinkedIn()">Connect</button>
+                </div>
+                <div class="platform-item">
+                    <div class="platform-icon twitter">𝕏</div>
+                    <div class="platform-info">
+                        <div class="platform-name">Twitter/X</div>
+                        <div class="platform-status" id="twitterStatus">Checking...</div>
+                    </div>
+                    <button class="connect-btn" id="twitterConnectBtn" onclick="connectTwitter()">Connect</button>
+                </div>
+            </div>
+
+            <!-- Post Creation Form -->
+            <div class="post-form">
+                <h3>📝 Create New Post</h3>
+                <form id="postForm">
+                    <!-- Photo Upload -->
+                    <div class="photo-upload" id="photoUpload" onclick="document.getElementById('photoInput').click()">
+                        <input type="file" id="photoInput" accept="image/*" onchange="handlePhotoSelect(event)">
+                        <div class="upload-icon">📷</div>
+                        <p>Click to select photo</p>
+                        <p style="font-size: 14px; color: #666; margin-top: 5px;">JPG, PNG, GIF up to 10MB</p>
+                        <img id="photoPreview" class="preview-image" style="display: none;">
+                    </div>
+
+                    <!-- Content -->
+                    <div class="form-group">
+                        <label>Caption / Content</label>
+                        <textarea id="postContent" rows="4" placeholder="What's on your mind?"></textarea>
+                    </div>
+
+                    <!-- Tags -->
+                    <div class="form-group">
+                        <label>Tags (press Enter to add)</label>
+                        <div class="tags-input" id="tagsContainer">
+                            <input type="text" id="tagsInput" placeholder="Add tags..." onkeydown="handleTagInput(event)">
+                        </div>
+                    </div>
+
+                    <!-- Platform Selection -->
+                    <div class="form-group">
+                        <label>Platforms</label>
+                        <div class="platform-select">
+                            <label class="platform-checkbox" id="instagramCheckbox">
+                                <input type="checkbox" value="instagram" onchange="togglePlatform(this)">
+                                <span>📸 Instagram</span>
+                            </label>
+                            <label class="platform-checkbox" id="facebookCheckbox">
+                                <input type="checkbox" value="facebook" onchange="togglePlatform(this)">
+                                <span>👍 Facebook</span>
+                            </label>
+                            <label class="platform-checkbox" id="linkedinCheckbox">
+                                <input type="checkbox" value="linkedin" onchange="togglePlatform(this)">
+                                <span>💼 LinkedIn</span>
+                            </label>
+                            <label class="platform-checkbox" id="twitterCheckbox">
+                                <input type="checkbox" value="twitter" onchange="togglePlatform(this)">
+                                <span>🐦 Twitter/X</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Schedule -->
+                    <div class="schedule-section">
+                        <label>When to Post?</label>
+                        <div class="schedule-options">
+                            <label class="schedule-option">
+                                <input type="radio" name="schedule" value="now" checked onchange="toggleSchedule()">
+                                <span>Post Now</span>
+                            </label>
+                            <label class="schedule-option">
+                                <input type="radio" name="schedule" value="later" onchange="toggleSchedule()">
+                                <span>Schedule for Later</span>
+                            </label>
+                        </div>
+                        <div class="datetime-picker" id="schedulePicker" style="display: none;">
+                            <input type="datetime-local" id="scheduleTime" class="form-group">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn" style="margin-top: 20px;" id="postBtn">
+                        📤 Post Now
+                    </button>
+                </form>
+            </div>
+
+            <!-- Posts List -->
+            <div class="posts-section">
+                <h3>📋 Your Posts</h3>
+                <div id="postsList">
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📝</div>
+                        <p>No posts yet. Create your first post above!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global State
+        let authToken = localStorage.getItem('konnect_token');
+        let userData = null;
+        let selectedTags = [];
+        let selectedPlatforms = [];
+        let selectedFile = null;
+
+        // API Base URL
+        const API_URL = '';
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            if (authToken) {
+                showDashboard();
+            } else {
+                showLogin();
+            }
+        });
+
+        // Login
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            try {
+                const response = await fetch(`${API_URL}/api/auth/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+
+                const data = await response.json();
+
+                if (data.token) {
+                    authToken = data.token;
+                    userData = data.user;
+                    localStorage.setItem('konnect_token', authToken);
+                    showDashboard();
+                } else {
+                    showAlert('loginAlert', data.message || 'Login failed', 'error');
+                }
+            } catch (error) {
+                showAlert('loginAlert', 'Network error. Please try again.', 'error');
+            }
+        });
+
+        // Logout
+        function logout() {
+            authToken = null;
+            userData = null;
+            localStorage.removeItem('konnect_token');
+            showLogin();
+        }
+
+        // Show/Hide Screens
+        function showLogin() {
+            document.getElementById('loginScreen').style.display = 'block';
+            document.getElementById('dashboard').style.display = 'none';
+        }
+
+        async function showDashboard() {
+            document.getElementById('loginScreen').style.display = 'none';
+            document.getElementById('dashboard').style.display = 'block';
+            await checkConnections();
+            await loadPosts();
+        }
+
+        // Check Social Connections
+        async function checkConnections() {
+            // Check Instagram
+            try {
+                const response = await fetch(`${API_URL}/api/instagram/me`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                if (response.ok) {
+                    updateConnectionStatus('instagram', true);
+                } else {
+                    updateConnectionStatus('instagram', false);
+                }
+            } catch {
+                updateConnectionStatus('instagram', false);
+            }
+
+            // Check Facebook
+            try {
+                const response = await fetch(`${API_URL}/api/facebook/me`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                if (response.ok) {
+                    updateConnectionStatus('facebook', true);
+                } else {
+                    updateConnectionStatus('facebook', false);
+                }
+            } catch {
+                updateConnectionStatus('facebook', false);
+            }
+
+            // Check LinkedIn
+            try {
+                const response = await fetch(`${API_URL}/api/linkedin/me`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                if (response.ok) {
+                    updateConnectionStatus('linkedin', true);
+                } else {
+                    updateConnectionStatus('linkedin', false);
+                }
+            } catch {
+                updateConnectionStatus('linkedin', false);
+            }
+
+            // Check Twitter
+            try {
+                const response = await fetch(`${API_URL}/api/twitter/me`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                if (response.ok) {
+                    updateConnectionStatus('twitter', true);
+                } else {
+                    updateConnectionStatus('twitter', false);
+                }
+            } catch {
+                updateConnectionStatus('twitter', false);
+            }
+        }
+
+        function updateConnectionStatus(platform, connected) {
+            const statusEl = document.getElementById(`${platform}Status`);
+            const btnEl = document.getElementById(`${platform}ConnectBtn`);
+            
+            if (connected) {
+                statusEl.textContent = '✅ Connected';
+                statusEl.className = 'platform-status connected';
+                btnEl.textContent = 'Reconnect';
+            } else {
+                statusEl.textContent = '❌ Not Connected';
+                statusEl.className = 'platform-status disconnected';
+                btnEl.textContent = 'Connect';
+            }
+        }
+
+        // Connect Social Accounts
+        async function connectInstagram() {
+            try {
+                const response = await fetch(`${API_URL}/api/instagram/connect`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const data = await response.json();
+                if (data.url) {
+                    window.open(data.url, '_blank');
+                }
+            } catch (error) {
+                showAlert('dashboardAlert', 'Failed to connect Instagram', 'error');
+            }
+        }
+
+        async function connectFacebook() {
+            try {
+                const response = await fetch(`${API_URL}/api/facebook/connect`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const data = await response.json();
+                if (data.url) {
+                    window.open(data.url, '_blank');
+                }
+            } catch (error) {
+                showAlert('dashboardAlert', 'Failed to connect Facebook', 'error');
+            }
+        }
+
+        async function connectLinkedIn() {
+            try {
+                const response = await fetch(`${API_URL}/api/linkedin/connect`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const data = await response.json();
+                if (data.url) {
+                    window.open(data.url, '_blank');
+                }
+            } catch (error) {
+                showAlert('dashboardAlert', 'Failed to connect LinkedIn', 'error');
+            }
+        }
+
+        async function connectTwitter() {
+            try {
+                const response = await fetch(`${API_URL}/api/twitter/connect`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const data = await response.json();
+                if (data.url) {
+                    window.open(data.url, '_blank');
+                }
+            } catch (error) {
+                showAlert('dashboardAlert', 'Failed to connect Twitter', 'error');
+            }
+        }
+
+        // Photo Upload
+        function handlePhotoSelect(event) {
+            const file = event.target.files[0];
+            if (file) {
+                selectedFile = file;
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const preview = document.getElementById('photoPreview');
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                    document.getElementById('photoUpload').classList.add('has-file');
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Tags
+        function handleTagInput(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                const input = event.target;
+                const tag = input.value.trim();
+                if (tag && !selectedTags.includes(tag)) {
+                    selectedTags.push(tag);
+                    renderTags();
+                    input.value = '';
+                }
+            }
+        }
+
+        function removeTag(tag) {
+            selectedTags = selectedTags.filter(t => t !== tag);
+            renderTags();
+        }
+
+        function renderTags() {
+            const container = document.getElementById('tagsContainer');
+            const input = document.getElementById('tagsInput');
+            
+            // Clear existing tags
+            container.innerHTML = '';
+            
+            // Add tag elements
+            selectedTags.forEach(tag => {
+                const tagEl = document.createElement('span');
+                tagEl.className = 'tag';
+                tagEl.innerHTML = `${tag} <button onclick="removeTag('${tag}')">×</button>`;
+                container.appendChild(tagEl);
+            });
+            
+            // Add input back
+            container.appendChild(input);
+            input.focus();
+        }
+
+        // Platform Selection
+        function togglePlatform(checkbox) {
+            const label = checkbox.parentElement;
+            if (checkbox.checked) {
+                label.classList.add('selected');
+                selectedPlatforms.push(checkbox.value);
+            } else {
+                label.classList.remove('selected');
+                selectedPlatforms = selectedPlatforms.filter(p => p !== checkbox.value);
+            }
+        }
+
+        // Schedule
+        function toggleSchedule() {
+            const isLater = document.querySelector('input[name="schedule"]:checked').value === 'later';
+            document.getElementById('schedulePicker').style.display = isLater ? 'block' : 'none';
+            document.getElementById('postBtn').textContent = isLater ? '📅 Schedule Post' : '📤 Post Now';
+        }
+
+        // Create Post
+        document.getElementById('postForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const content = document.getElementById('postContent').value;
+            const isScheduled = document.querySelector('input[name="schedule"]:checked').value === 'later';
+            const scheduleTime = isScheduled ? document.getElementById('scheduleTime').value : 'now';
+
+            // Validation
+            if (!selectedFile) {
+                showAlert('dashboardAlert', 'Please select a photo', 'error');
+                return;
+            }
+
+            if (!content.trim()) {
+                showAlert('dashboardAlert', 'Please enter a caption', 'error');
+                return;
+            }
+
+            if (selectedPlatforms.length === 0) {
+                showAlert('dashboardAlert', 'Please select at least one platform', 'error');
+                return;
+            }
+
+            // Build form data
+            const formData = new FormData();
+            formData.append('media', selectedFile);
+            formData.append('content', content);
+            formData.append('platforms', selectedPlatforms.join(','));
+            formData.append('tags', selectedTags.join(','));
+            formData.append('scheduledTime', scheduleTime);
+
+            // Show loading
+            const btn = document.getElementById('postBtn');
+            btn.disabled = true;
+            btn.innerHTML = isScheduled ? 'Scheduling...' : 'Posting...';
+
+            try {
+                const response = await fetch(`${API_URL}/api/posts`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${authToken}` },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showAlert('dashboardAlert', data.message, 'success');
+                    resetForm();
+                    await loadPosts();
+                } else {
+                    showAlert('dashboardAlert', data.error || 'Failed to create post', 'error');
+                }
+            } catch (error) {
+                showAlert('dashboardAlert', 'Network error. Please try again.', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = isScheduled ? '📅 Schedule Post' : '📤 Post Now';
+            }
+        });
+
+        function resetForm() {
+            document.getElementById('postForm').reset();
+            document.getElementById('photoPreview').style.display = 'none';
+            document.getElementById('photoUpload').classList.remove('has-file');
+            selectedFile = null;
+            selectedTags = [];
+            renderTags();
+            selectedPlatforms = [];
+            document.querySelectorAll('.platform-checkbox').forEach(el => {
+                el.classList.remove('selected');
+            });
+            document.querySelectorAll('.platform-checkbox input').forEach(el => {
+                el.checked = false;
+            });
+            toggleSchedule();
+        }
+
+        // Load Posts
+        async function loadPosts() {
+            try {
+                const response = await fetch(`${API_URL}/api/posts`, {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    renderPosts(data.posts);
+                }
+            } catch (error) {
+                console.error('Failed to load posts:', error);
+            }
+        }
+
+        function renderPosts(posts) {
+            const container = document.getElementById('postsList');
+            
+            if (posts.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">📝</div>
+                        <p>No posts yet. Create your first post above!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = posts.map(post => `
+                <div class="post-item">
+                    <div class="post-header">
+                        <span class="post-status ${post.status}">${post.status.replace('_', ' ')}</span>
+                        <span style="color: #666; font-size: 14px;">${new Date(post.createdAt).toLocaleString()}</span>
+                    </div>
+                    ${post.mediaUrls && post.mediaUrls[0] ? `<img src="${post.mediaUrls[0]}" class="post-image" alt="Post image">` : ''}
+                    <div class="post-content">${post.content}</div>
+                    <div class="post-meta">
+                        <span>📅 ${post.scheduledTime ? new Date(post.scheduledTime).toLocaleString() : 'Immediate'}</span>
+                    </div>
+                    <div class="post-platforms">
+                        ${post.platforms.map(p => `<span class="platform-badge">${p}</span>`).join('')}
+                    </div>
+                    ${post.results ? renderPostResults(post.results) : ''}
+                    ${post.status === 'scheduled' ? `
+                        <div class="post-actions">
+                            <button class="btn-danger" onclick="cancelPost('${post._id}')">Cancel</button>
+                        </div>
+                    ` : ''}
+                    ${(post.status === 'failed' || post.status === 'partially_failed') ? `
+                        <div class="post-actions">
+                            <button onclick="retryPost('${post._id}')">Retry</button>
+                        </div>
+                    ` : ''}
+                </div>
+            `).join('');
+        }
+
+        function renderPostResults(results) {
+            if (!results) return '';
+            
+            let html = '<div style="margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 5px;">';
+            
+            if (results.instagram) {
+                const ig = results.instagram;
+                html += `<div style="margin-bottom: 5px;">
+                    📸 Instagram: ${ig.success ? 
+                        `✅ <a href="${ig.url}" target="_blank" style="color: #667eea;">View Post</a>` : 
+                        `❌ ${ig.error}`}
+                </div>`;
+            }
+            
+            if (results.facebook) {
+                const fb = results.facebook;
+                html += `<div style="margin-bottom: 5px;">
+                    👍 Facebook: ${fb.success ? 
+                        `✅ <a href="${fb.url}" target="_blank" style="color: #667eea;">View Post</a>` : 
+                        `❌ ${fb.error}`}
+                </div>`;
+            }
+            
+            if (results.linkedin) {
+                const li = results.linkedin;
+                html += `<div style="margin-bottom: 5px;">
+                    💼 LinkedIn: ${li.success ? 
+                        `✅ <a href="${li.url}" target="_blank" style="color: #667eea;">View Post</a>` : 
+                        `❌ ${li.error}`}
+                </div>`;
+            }
+            
+            if (results.twitter) {
+                const tw = results.twitter;
+                html += `<div>
+                    🐦 Twitter: ${tw.success ? 
+                        `✅ <a href="${tw.url}" target="_blank" style="color: #667eea;">View Post</a>` : 
+                        `❌ ${tw.error}`}
+                </div>`;
+            }
+            
+            html += '</div>';
+            return html;
+        }
+
+        // Cancel Post
+        async function cancelPost(postId) {
+            if (!confirm('Are you sure you want to cancel this scheduled post?')) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/api/posts/${postId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert('dashboardAlert', 'Post cancelled successfully', 'success');
+                    await loadPosts();
+                } else {
+                    showAlert('dashboardAlert', data.error || 'Failed to cancel post', 'error');
+                }
+            } catch (error) {
+                showAlert('dashboardAlert', 'Network error. Please try again.', 'error');
+            }
+        }
+
+        // Retry Post
+        async function retryPost(postId) {
+            try {
+                const response = await fetch(`${API_URL}/api/posts/${postId}/retry`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    showAlert('dashboardAlert', 'Retrying post...', 'success');
+                    await loadPosts();
+                } else {
+                    showAlert('dashboardAlert', data.error || 'Failed to retry post', 'error');
+                }
+            } catch (error) {
+                showAlert('dashboardAlert', 'Network error. Please try again.', 'error');
+            }
+        }
+
+        // Alert Helper
+        function showAlert(elementId, message, type) {
+            const alert = document.getElementById(elementId);
+            alert.textContent = message;
+            alert.className = `alert ${type} show`;
+            
+            setTimeout(() => {
+                alert.classList.remove('show');
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

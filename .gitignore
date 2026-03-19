@@ -1,0 +1,17 @@
+# Build files
+*.apk
+
+# Uploads
+api/uploads/
+
+# Android icons (generated)
+ui_app/android/app/src/main/res/mipmap-*/
+
+# iOS icons (generated)
+ui_app/ios/Runner/Assets.xcassets/
+
+# Images
+*.png
+*.jpg
+*.jpeg
+*.webp

@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Konnect API Debug</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+        }
+        .section h2 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button.secondary {
+            background: #6c757d;
+        }
+        button.secondary:hover {
+            background: #545b62;
+        }
+        button.danger {
+            background: #dc3545;
+        }
+        button.danger:hover {
+            background: #c82333;
+        }
+        .result {
+            margin-top: 15px;
+            padding: 15px;
+            background: #e9ecef;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .token-input {
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        .platform-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .platform-card {
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .platform-card:hover {
+            border-color: #007bff;
+            background: #f0f7ff;
+        }
+        .platform-card.selected {
+            border-color: #007bff;
+            background: #e3f2fd;
+        }
+        .platform-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+        .checkbox-group {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-connected { background: #28a745; }
+        .status-disconnected { background: #dc3545; }
+        .status-unknown { background: #ffc107; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Konnect API Debugger</h1>
+        <p class="subtitle">Test posts and analytics without the mobile app</p>
+
+        <!-- Authentication -->
+        <div class="section">
+            <h2>1. Authentication</h2>
+            <div class="form-group">
+                <label>JWT Token (from mobile app)</label>
+                <input type="text" id="jwtToken" class="token-input" placeholder="eyJhbGciOiJIUzI1NiIs...">
+            </div>
+            <button onclick="testAuth()">Test Authentication</button>
+            <button class="secondary" onclick="loadFromStorage()">Load from Storage</button>
+            <div id="authResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Connection Status -->
+        <div class="section">
+            <h2>2. Connection Status</h2>
+            <button onclick="checkConnections()">Check All Connections</button>
+            <div id="connectionResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Create Post -->
+        <div class="section">
+            <h2>3. Create Test Post</h2>
+            
+            <div class="form-group">
+                <label>Select Platforms</label>
+                <div class="platform-grid">
+                    <div class="platform-card" onclick="togglePlatform('instagram')" id="plat-instagram">
+                        <div class="platform-icon">📸</div>
+                        <div>Instagram</div>
+                    </div>
+                    <div class="platform-card" onclick="togglePlatform('facebook')" id="plat-facebook">
+                        <div class="platform-icon">📘</div>
+                        <div>Facebook</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Caption</label>
+                <textarea id="caption" placeholder="Enter your post caption here..."></textarea>
+            </div>
+
+            <div class="form-group">
+                <label>Image URL (publicly accessible)</label>
+                <input type="text" id="imageUrl" placeholder="https://example.com/image.jpg" 
+                       value="https://api.codesbyjit.site/uploads/test-image.png">
+            </div>
+
+            <button onclick="createPost()">Create Post</button>
+            <button class="secondary" onclick="createPostScheduled()">Schedule (+5 min)</button>
+            <div id="postResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Analytics -->
+        <div class="section">
+            <h2>4. Test Analytics</h2>
+            <div class="form-group">
+                <label>Platform</label>
+                <select id="analyticsPlatform">
+                    <option value="instagram">Instagram</option>
+                    <option value="facebook">Facebook</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Date Range</label>
+                <select id="analyticsDays">
+                    <option value="7">Last 7 Days</option>
+                    <option value="30" selected>Last 30 Days</option>
+                </select>
+            </div>
+            <button onclick="fetchAnalytics()">Fetch Analytics</button>
+            <div id="analyticsResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Facebook Pages -->
+        <div class="section">
+            <h2>5. Facebook Page Selection</h2>
+            <button onclick="fetchFacebookPages()">Fetch Pages</button>
+            <div id="pagesResult" class="result" style="display:none;"></div>
+        </div>
+
+        <!-- Logs -->
+        <div class="section">
+            <h2>6. Request Logs</h2>
+            <button class="danger" onclick="clearLogs()">Clear Logs</button>
+            <div id="logs" class="result">No requests yet...</div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = window.location.origin + '/api';
+        let selectedPlatforms = new Set();
+
+        function log(message, type = 'info') {
+            const logsDiv = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            const color = type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#333';
+            logsDiv.innerHTML += `<div style="color: ${color}; margin-bottom: 5px;">[${timestamp}] ${message}</div>`;
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+
+        function getToken() {
+            const token = document.getElementById('jwtToken').value.trim();
+            if (!token) {
+                alert('Please enter JWT token first!');
+                return null;
+            }
+            return token;
+        }
+
+        async function testAuth() {
+            const token = getToken();
+            if (!token) return;
+
+            log('Testing authentication...');
+            try {
+                const res = await fetch(`${API_BASE}/users/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                
+                const resultDiv = document.getElementById('authResult');
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result ' + (res.ok ? 'success' : 'error');
+                resultDiv.textContent = JSON.stringify(data, null, 2);
+                
+                log(`Auth test: ${res.ok ? 'Success' : 'Failed'}`, res.ok ? 'success' : 'error');
+                
+                if (res.ok) {
+                    localStorage.setItem('jwt_token', token);
+                }
+            } catch (err) {
+                log(`Auth error: ${err.message}`, 'error');
+            }
+        }
+
+        function loadFromStorage() {
+            const token = localStorage.getItem('jwt_token');
+            if (token) {
+                document.getElementById('jwtToken').value = token;
+                log('Token loaded from storage');
+            } else {
+                log('No token found in storage', 'error');
+            }
+        }
+
+        async function checkConnections() {
+            const token = getToken();
+            if (!token) return;
+
+            log('Checking connections...');
+            try {
+                const res = await fetch(`${API_BASE}/users/me`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                
+                const resultDiv = document.getElementById('connectionResult');
+                resultDiv.style.display = 'block';
+                
+                if (data.user) {
+                    const u = data.user;
+                    resultDiv.innerHTML = `
+                        <strong>Connection Status:</strong><br><br>
+                        <span class="status-indicator ${u.instagramAccessToken ? 'status-connected' : 'status-disconnected'}"></span>
+                        Instagram: ${u.instagramAccessToken ? '✅ Connected' : '❌ Not Connected'}<br>
+                        ${u.instagramAccessToken ? `Instagram User ID: ${u.instagramUserId}<br>` : ''}
+                        <br>
+                        <span class="status-indicator ${u.facebookAccessToken ? 'status-connected' : 'status-disconnected'}"></span>
+                        Facebook: ${u.facebookAccessToken ? '✅ Connected' : '❌ Not Connected'}<br>
+                        ${u.facebookAccessToken ? `Facebook User ID: ${u.facebookUserId}<br>Facebook Page ID: ${u.facebookPageId || '❌ No page selected'}<br>` : ''}
+                    `;
+                } else {
+                    resultDiv.textContent = JSON.stringify(data, null, 2);
+                }
+                
+                log('Connections checked');
+            } catch (err) {
+                log(`Error: ${err.message}`, 'error');
+            }
+        }
+
+        function togglePlatform(platform) {
+            const card = document.getElementById(`plat-${platform}`);
+            if (selectedPlatforms.has(platform)) {
+                selectedPlatforms.delete(platform);
+                card.classList.remove('selected');
+            } else {
+                selectedPlatforms.add(platform);
+                card.classList.add('selected');
+            }
+        }
+
+        async function createPost() {
+            await createPostInternal(false);
+        }
+
+        async function createPostScheduled() {
+            await createPostInternal(true);
+        }
+
+        async function createPostInternal(scheduled) {
+            const token = getToken();
+            if (!token) return;
+
+            if (selectedPlatforms.size === 0) {
+                alert('Please select at least one platform!');
+                return;
+            }
+
+            const caption = document.getElementById('caption').value.trim();
+            const imageUrl = document.getElementById('imageUrl').value.trim();
+
+            if (!caption || !imageUrl) {
+                alert('Please enter both caption and image URL!');
+                return;
+            }
+
+            const payload = {
+                content: caption,
+                platforms: Array.from(selectedPlatforms),
+                mediaUrl: imageUrl,
+                tags: "test,debug"
+            };
+
+            if (scheduled) {
+                const scheduledTime = new Date(Date.now() + 5 * 60000).toISOString();
+                payload.scheduledTime = scheduledTime;
+            }
+
+            log(`Creating ${scheduled ? 'scheduled ' : ''}post to: ${payload.platforms.join(', ')}`);
+
+            try {
+                const res = await fetch(`${API_BASE}/posts/create`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                
+                const data = await res.json();
+                
+                const resultDiv = document.getElementById('postResult');
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result ' + (data.success ? 'success' : 'error');
+                resultDiv.textContent = JSON.stringify(data, null, 2);
+                
+                log(`Post creation: ${data.success ? 'Success' : 'Failed'}`, data.success ? 'success' : 'error');
+            } catch (err) {
+                log(`Post error: ${err.message}`, 'error');
+            }
+        }
+
+        async function fetchAnalytics() {
+            const token = getToken();
+            if (!token) return;
+
+            const platform = document.getElementById('analyticsPlatform').value;
+            const days = document.getElementById('analyticsDays').value;
+
+            log(`Fetching ${platform} analytics (${days} days)...`);
+
+            try {
+                const res = await fetch(`${API_BASE}/analytics/${platform}?days=${days}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                const data = await res.json();
+                
+                const resultDiv = document.getElementById('analyticsResult');
+                resultDiv.style.display = 'block';
+                resultDiv.className = 'result ' + (data.success ? 'success' : 'error');
+                resultDiv.textContent = JSON.stringify(data, null, 2);
+                
+                log(`Analytics: ${data.success ? 'Success' : 'Failed'}`, data.success ? 'success' : 'error');
+            } catch (err) {
+                log(`Analytics error: ${err.message}`, 'error');
+            }
+        }
+
+        async function fetchFacebookPages() {
+            const token = getToken();
+            if (!token) return;
+
+            log('Fetching Facebook pages...');
+
+            try {
+                const res = await fetch(`${API_BASE}/facebook/pages`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                
+                const data = await res.json();
+                
+                const resultDiv = document.getElementById('pagesResult');
+                resultDiv.style.display = 'block';
+                
+                if (data.success && data.pages) {
+                    let html = '<strong>Available Pages:</strong><br><br>';
+                    data.pages.forEach(page => {
+                        const isSelected = page.id === data.selectedPageId;
+                        html += `
+                            <div style="padding: 10px; margin-bottom: 8px; border: 2px solid ${isSelected ? '#28a745' : '#ddd'}; border-radius: 6px;">
+                                <strong>${page.name}</strong> ${isSelected ? '✅ SELECTED' : ''}<br>
+                                <small>ID: ${page.id} | Category: ${page.category || 'N/A'}</small><br>
+                                ${!isSelected ? `<button onclick="selectPage('${page.id}', '${page.name}')">Select This Page</button>` : ''}
+                            </div>
+                        `;
+                    });
+                    resultDiv.innerHTML = html;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = JSON.stringify(data, null, 2);
+                }
+                
+                log(`Pages fetched: ${data.pages?.length || 0}`);
+            } catch (err) {
+                log(`Pages error: ${err.message}`, 'error');
+            }
+        }
+
+        async function selectPage(pageId, pageName) {
+            const token = getToken();
+            if (!token) return;
+
+            log(`Selecting page: ${pageName}...`);
+
+            try {
+                const res = await fetch(`${API_BASE}/facebook/select-page`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ pageId })
+                });
+                
+                const data = await res.json();
+                
+                if (data.success) {
+                    log(`Page selected: ${pageName}`, 'success');
+                    fetchFacebookPages(); // Refresh the list
+                } else {
+                    log(`Failed to select page: ${data.message}`, 'error');
+                }
+            } catch (err) {
+                log(`Select page error: ${err.message}`, 'error');
+            }
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').textContent = 'No requests yet...';
+        }
+
+        // Load token on startup
+        loadFromStorage();
+    </script>
+</body>
+</html>
