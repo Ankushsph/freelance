@@ -78,3 +78,12 @@ export const otpEmailTemplate = ({
   </html>
   `;
 };
+
+
+// Simple function wrapper for easier use
+export const otpTemplate = (otp: string, purpose: string): string => {
+  return otpEmailTemplate({ 
+    otp, 
+    purpose: purpose as "forgot_password" | "signup" 
+  });
+};
