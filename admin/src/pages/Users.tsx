@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, MoreVertical, ShieldAlert, Ban, Eye } from 'lucide-react';
+import { Search, ShieldAlert, Ban, Eye } from 'lucide-react';
 import api from '../lib/api';
 
 interface UserData {

@@ -14,7 +14,6 @@ interface AnnouncementData {
 export function Notifications() {
   const [announcements, setAnnouncements] = useState<AnnouncementData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [title, setTitle] = useState('');
   const [body, setBody] = useState('');
 
@@ -22,14 +21,12 @@ export function Notifications() {
     const fetchAnnouncements = async () => {
       try {
         setLoading(true);
-        setError(null);
         const response = await api.get('/admin/notifications');
         if (response.data.success) {
           setAnnouncements(response.data.data);
         }
       } catch (error) {
         console.error("Error fetching announcements:", error);
-        setError("Failed to load notifications. Using demo data.");
         // Demo data on error
         setAnnouncements([
           { _id: '1', title: 'System Maintenance', type: 'Info', audience: 'All Users', createdAt: new Date().toISOString(), date: new Date().toLocaleDateString() }

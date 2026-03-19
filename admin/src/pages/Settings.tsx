@@ -10,20 +10,17 @@ export function Settings() {
     openRouterKeyConfigured: false
   });
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchSettings = async () => {
       try {
         setLoading(true);
-        setError(null);
         const response = await api.get('/admin/settings');
         if (response.data.success) {
           setSettings(response.data.data);
         }
       } catch (error) {
         console.error("Error fetching settings:", error);
-        setError("Failed to load settings. Using default values.");
         setSettings({
           maintenanceMode: false,
           platformName: 'KonnectMedia',

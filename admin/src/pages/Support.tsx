@@ -14,20 +14,17 @@ interface TicketData {
 export function Support() {
   const [tickets, setTickets] = useState<TicketData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchTickets = async () => {
       try {
         setLoading(true);
-        setError(null);
         const response = await api.get('/admin/tickets');
         if (response.data.success) {
           setTickets(response.data.data);
         }
       } catch (error) {
         console.error("Error fetching tickets:", error);
-        setError("Failed to load support tickets. Using demo data.");
         // Demo data on error
         setTickets([
           { id: '1', user: 'John Doe', issue: 'Login Problem', priority: 'High', status: 'Open', time: new Date().toLocaleDateString() },

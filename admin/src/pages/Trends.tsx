@@ -14,20 +14,17 @@ interface TrendData {
 export function Trends() {
   const [trends, setTrends] = useState<TrendData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchTrends = async () => {
       try {
         setLoading(true);
-        setError(null);
         const response = await api.get('/admin/trends');
         if (response.data.success) {
           setTrends(response.data.data);
         }
       } catch (error) {
         console.error("Error fetching trends:", error);
-        setError("Failed to load trends. Using demo data.");
         // Demo data on error
         setTrends([
           { _id: '1', name: '#socialmedia', volume: 15420, category: 'Marketing', sentiment: 'positive', status: 'Active' },
