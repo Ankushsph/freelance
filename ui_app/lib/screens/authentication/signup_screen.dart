@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../widgets/k_textfield.dart';
 import '../../widgets/k_button.dart';
 import '../../services/api_service.dart';
+import '../../constants/auth_keys.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -33,92 +35,42 @@ class _SignupScreenState extends State<SignupScreen> {
     setState(() => isLoading = true);
 
     try {
-      // Show progress message
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Connecting to server..."),
-          duration: Duration(seconds: 2),
-        ),
-      );
-      
-      // First send OTP to the user's email
-      final otp = await ApiService.sendOtp(
+      // Bypass OTP - directly create user account
+      final data = await ApiService.createUser(
+        name: _nameController.text.trim(),
         email: _emailController.text.trim(),
-        purpose: 'signup',
+        number: int.parse(_mobileController.text.trim()),
+        password: _passwordController.text.trim(),
       );
 
       if (!mounted) return;
 
-      // Show OTP in a dialog for development
-      if (otp != null) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => AlertDialog(
-            title: const Text('OTP Sent ✅'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text('Check your email or use:'),
-                const SizedBox(height: 10),
-                Text(
-                  otp,
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 8,
-                    color: Colors.blue,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  'Enter this OTP on the next screen',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  // Navigate to OTP screen
-                  Navigator.pushNamed(
-                    context,
-                    '/otp',
-                    arguments: {
-                      'email': _emailController.text.trim(),
-                      'purpose': 'signup',
-                      'userData': {
-                        'name': _nameController.text.trim(),
-                        'email': _emailController.text.trim(),
-                        'number': int.parse(_mobileController.text.trim()),
-                        'password': _passwordController.text.trim(),
-                      },
-                    },
-                  );
-                },
-                child: const Text('Continue'),
-              ),
-            ],
-          ),
-        );
-      } else {
-        // If no OTP in response, just navigate
-        Navigator.pushNamed(
-          context,
-          '/otp',
-          arguments: {
-            'email': _emailController.text.trim(),
-            'purpose': 'signup',
-            'userData': {
-              'name': _nameController.text.trim(),
-              'email': _emailController.text.trim(),
-              'number': int.parse(_mobileController.text.trim()),
-              'password': _passwordController.text.trim(),
-            },
-          },
-        );
+      // Save token and user data
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('jwt_token', data['token']!);
+      await prefs.setString('user_name', data['name']!);
+      await prefs.setString('user_email', data['email']!);
+      await prefs.setString(AuthKeys.token, data['token']!);
+
+      // Try to fetch user profile
+      try {
+        await ApiService.getMe();
+      } catch (e) {
+        // Ignore profile fetch errors
       }
+
+      if (!mounted) return;
+      
+      // Show success message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Account created successfully!"),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      // Navigate to home
+      Navigator.pushReplacementNamed(context, '/home');
     } catch (e) {
       if (!mounted) return;
       

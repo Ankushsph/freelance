@@ -75,17 +75,16 @@ router.post("/login", async (req, res) => {
 
 router.post("/reset-password", async (req, res) => {
   const { email, newPassword } = req.body;
-  const otp = await Otp.findOne({
-    email,
-    purpose: "forgot_password",
-    verified: true,
-  });
-  if (!otp) {
-    return res.status(403).json({ message: "OTP not verified" });
+  
+  // Bypass OTP verification - directly reset password
+  const user = await User.findOne({ email });
+  if (!user) {
+    return res.status(404).json({ message: "User not found" });
   }
+  
   const hashed = await bcrypt.hash(newPassword, 10);
   await User.updateOne({ email }, { password: hashed });
-  await Otp.deleteOne({ email, purpose: "forgot_password" });
+  
   res.json({ message: "Password updated successfully" });
 });
 

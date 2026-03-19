@@ -25,67 +25,16 @@ class _ForgotScreenState extends State<ForgotScreen> {
     setState(() => isLoading = true);
 
     try {
-      final otp = await ApiService.sendOtp(
-        email: _emailController.text.trim(),
-        purpose: 'forgot_password',
-      );
-
+      // Bypass OTP - directly navigate to password reset
       if (!mounted) return;
-
-      // Show OTP in a dialog for development
-      if (otp != null) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('OTP Sent'),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Text('Your OTP is:'),
-                const SizedBox(height: 10),
-                Text(
-                  otp,
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 8,
-                  ),
-                ),
-                const SizedBox(height: 10),
-                const Text(
-                  'Enter this OTP on the next screen',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              ],
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  Navigator.pushNamed(
-                    context,
-                    '/otp',
-                    arguments: {
-                      'email': _emailController.text.trim(),
-                      'purpose': 'forgot_password',
-                    },
-                  );
-                },
-                child: const Text('Continue'),
-              ),
-            ],
-          ),
-        );
-      } else {
-        Navigator.pushNamed(
-          context,
-          '/otp',
-          arguments: {
-            'email': _emailController.text.trim(),
-            'purpose': 'forgot_password',
-          },
-        );
-      }
+      
+      Navigator.pushNamed(
+        context,
+        '/reset_pass',
+        arguments: {
+          'email': _emailController.text.trim(),
+        },
+      );
     } catch (e) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(e.toString())));
@@ -115,7 +64,7 @@ class _ForgotScreenState extends State<ForgotScreen> {
               ),
               const SizedBox(height: 20),
               KButton(
-                text: isLoading ? "Sending..." : "Send",
+                text: isLoading ? "Processing..." : "Continue",
                 onTap: isLoading ? null : _sendOtp,
               ),
               const Spacer(),

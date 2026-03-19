@@ -14,15 +14,37 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
   final _passwordController = TextEditingController();
 
   Future<void> _reset() async {
+    if (_passwordController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Password required")),
+      );
+      return;
+    }
+
     final args =
     ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
 
-    await ApiService.resetPassword(
-      email: args['email'],
-      newPassword: _passwordController.text.trim(),
-    );
+    try {
+      await ApiService.resetPassword(
+        email: args['email'],
+        newPassword: _passwordController.text.trim(),
+      );
 
-    Navigator.pushReplacementNamed(context, '/login');
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Password reset successfully!"),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.pushReplacementNamed(context, '/login');
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    }
   }
 
   @override
