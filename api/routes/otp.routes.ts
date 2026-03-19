@@ -2,9 +2,12 @@ import crypto from "crypto";
 import { Otp } from "../models/Otp";
 import { User } from "../models/User";
 import { Router } from "express";
+import { transporter } from "../utils/mailer";
+import { otpTemplate } from "../utils/otpTemplate";
+
 const router = Router();
 
-/* SEND OTP - DEVELOPMENT VERSION */
+/* SEND OTP - WITH EMAIL */
 router.post("/send", async (req, res) => {
   try {
     console.log("🔍 OTP SEND REQUEST:", req.body);
@@ -34,10 +37,22 @@ router.post("/send", async (req, res) => {
       { upsert: true }
     );
     
-    // Log OTP for development (no email sending)
+    // Log OTP for development
     console.log("🔑 GENERATED OTP FOR", email, ":", otp);
-    console.log("🔑 USE THIS OTP IN THE APP:", otp);
-    console.log("========================");
+    
+    // Try to send email
+    try {
+      await transporter.sendMail({
+        from: process.env.MAIL_USER || 'noreply@konnectmedia.com',
+        to: email,
+        subject: 'Your KonnectMedia OTP',
+        html: otpTemplate(otp, purpose),
+      });
+      console.log("✅ OTP email sent to", email);
+    } catch (emailError: any) {
+      console.log("⚠️  Email sending failed:", emailError.message);
+      console.log("🔑 USE THIS OTP IN THE APP:", otp);
+    }
 
     res.json({ 
       message: "OTP sent successfully", 
