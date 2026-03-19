@@ -110,11 +110,26 @@ class _SignupScreenState extends State<SignupScreen> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
+      
+      String errorMessage = e.toString().replaceAll('Exception: ', '');
+      
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
+        SnackBar(
+          content: Text(errorMessage),
+          duration: const Duration(seconds: 5),
+          action: errorMessage.contains('waking up') 
+            ? SnackBarAction(
+                label: 'Retry',
+                onPressed: _signup,
+              )
+            : null,
+        ),
       );
     } finally {
-      setState(() => isLoading = false);
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
     }
   }
 

@@ -107,18 +107,32 @@ class ApiService {
     required String email,
     required String purpose,
   }) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/otp/send'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'email': email, 'purpose': purpose}),
-    );
-    if (response.statusCode != 200) {
-      throw Exception('Failed to send OTP');
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/otp/send'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'email': email, 'purpose': purpose}),
+      ).timeout(
+        const Duration(seconds: 60),
+        onTimeout: () {
+          throw Exception('Request timed out. Server might be starting up. Please try again in 30 seconds.');
+        },
+      );
+      
+      if (response.statusCode != 200) {
+        final error = jsonDecode(response.body)['message'] ?? 'Failed to send OTP';
+        throw Exception(error);
+      }
+      
+      // Return OTP for development (backend sends it in response)
+      final data = jsonDecode(response.body);
+      return data['otp'] as String?;
+    } catch (e) {
+      if (e.toString().contains('timed out')) {
+        throw Exception('Server is waking up. Please wait 30 seconds and try again.');
+      }
+      rethrow;
     }
-    
-    // Return OTP for development (backend sends it in response)
-    final data = jsonDecode(response.body);
-    return data['otp'] as String?;
   }
 
   static Future<void> verifyOtp({
