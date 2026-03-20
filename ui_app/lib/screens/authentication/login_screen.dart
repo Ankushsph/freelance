@@ -30,11 +30,26 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => isLoading = true);
 
     try {
+      // Show connecting message
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Connecting to server... This may take up to 60 seconds on first try."),
+          duration: Duration(seconds: 3),
+        ),
+      );
 
+      // Add timeout with retry
       final data = await ApiService.loginUser(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
+      ).timeout(
+        const Duration(seconds: 90),
+        onTimeout: () {
+          throw Exception('Server is waking up. Please wait 30 seconds and try again.');
+        },
       );
+
+      if (!mounted) return;
 
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('jwt_token', data['token']!);
@@ -42,26 +57,44 @@ class _LoginScreenState extends State<LoginScreen> {
       await prefs.setString('user_email', data['email']!);
       await prefs.setString(AuthKeys.token, data['token']!);
 
-
+      // Try to fetch user profile
       try {
         await ApiService.getMe();
       } catch (e) {
-
+        // Ignore profile fetch errors
       }
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Login Successful")),
+        const SnackBar(
+          content: Text("Login Successful!"),
+          backgroundColor: Colors.green,
+        ),
       );
 
       Navigator.pushReplacementNamed(context, '/home');
     } catch (e) {
+      if (!mounted) return;
+      
+      String errorMessage = e.toString().replaceAll('Exception: ', '');
+      
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
+        SnackBar(
+          content: Text(errorMessage),
+          duration: const Duration(seconds: 6),
+          backgroundColor: Colors.red,
+          action: SnackBarAction(
+            label: 'Retry',
+            textColor: Colors.white,
+            onPressed: _login,
+          ),
+        ),
       );
     } finally {
-      setState(() => isLoading = false);
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
     }
   }
 

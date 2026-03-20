@@ -18,14 +18,17 @@ class _LauncherScreenState extends State<LauncherScreen> {
   }
 
   Future<void> _checkLogin() async {
+    // Add a small delay to show the logo
+    await Future.delayed(const Duration(milliseconds: 500));
+    
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString('jwt_token');
 
-    if (token != null && token.isNotEmpty) {
+    if (!mounted) return;
 
+    if (token != null && token.isNotEmpty) {
       Navigator.pushReplacementNamed(context, '/home');
     } else {
-
       Navigator.pushReplacementNamed(context, '/login');
     }
   }

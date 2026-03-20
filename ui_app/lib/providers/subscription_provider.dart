@@ -20,10 +20,38 @@ class SubscriptionProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      _subscription = await SubscriptionService.getMySubscription();
+      // Add timeout to prevent infinite loading
+      _subscription = await SubscriptionService.getMySubscription()
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              // Return default free subscription on timeout
+              return Subscription(
+                id: 'default',
+                userId: '',
+                planType: 'free',
+                subscriptionStatus: 'active',
+                startDate: DateTime.now(),
+                expiryDate: DateTime.now().add(const Duration(days: 365)),
+                amount: 0,
+                currency: 'INR',
+              );
+            },
+          );
       _isLoading = false;
       notifyListeners();
     } catch (e) {
+      // On error, set default free subscription
+      _subscription = Subscription(
+        id: 'default',
+        userId: '',
+        planType: 'free',
+        subscriptionStatus: 'active',
+        startDate: DateTime.now(),
+        expiryDate: DateTime.now().add(const Duration(days: 365)),
+        amount: 0,
+        currency: 'INR',
+      );
       _error = e.toString();
       _isLoading = false;
       notifyListeners();
