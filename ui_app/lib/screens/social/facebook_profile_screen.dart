@@ -16,19 +16,55 @@ class FacebookProfileScreen extends StatefulWidget {
   State<FacebookProfileScreen> createState() => _FacebookProfileScreenState();
 }
 
-class _FacebookProfileScreenState extends State<FacebookProfileScreen> {
+class _FacebookProfileScreenState extends State<FacebookProfileScreen> with WidgetsBindingObserver {
   SocialProfile? profile;
   bool isLoading = true;
   String? error;
   List<Map<String, dynamic>> pages = [];
   String? selectedPageId;
   bool isLoadingPages = false;
+  bool _isCheckingConnection = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     print('[FacebookScreen] initState called');
     _loadProfile();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && !_isCheckingConnection) {
+      // App came back to foreground - check if Facebook was connected
+      _checkConnectionAfterOAuth();
+    }
+  }
+
+  Future<void> _checkConnectionAfterOAuth() async {
+    if (_isCheckingConnection) return;
+    
+    _isCheckingConnection = true;
+    
+    // Wait a bit for the backend to process the OAuth callback
+    await Future.delayed(const Duration(seconds: 2));
+    
+    try {
+      await _refreshFromApi();
+      if (profile != null && mounted) {
+        _showSuccess('Facebook connected successfully!');
+      }
+    } catch (e) {
+      print('Connection check failed: $e');
+    } finally {
+      _isCheckingConnection = false;
+    }
   }
 
   Future<void> _loadProfile() async {
@@ -187,6 +223,10 @@ class _FacebookProfileScreenState extends State<FacebookProfileScreen> {
     }
 
     try {
+      setState(() {
+        isLoading = true;
+      });
+
       final res = await http.post(
         Uri.parse('${FacebookProfileScreen.baseUrl}/facebook/connect'),
         headers: {
@@ -203,6 +243,10 @@ class _FacebookProfileScreenState extends State<FacebookProfileScreen> {
       final data = jsonDecode(res.body);
       final oauthUrl = Uri.parse(data['url']);
 
+      setState(() {
+        isLoading = false;
+      });
+
       final launched = await launchUrl(
         oauthUrl,
         mode: LaunchMode.externalApplication,
@@ -212,8 +256,21 @@ class _FacebookProfileScreenState extends State<FacebookProfileScreen> {
         throw Exception("Could not open Facebook OAuth");
       }
       
+      // Show a message that user should return after connecting
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Complete the login in your browser, then return to the app'),
+            duration: Duration(seconds: 5),
+            backgroundColor: Colors.blue,
+          ),
+        );
+      }
 
     } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
       _showError("Error: $e");
     }
   }

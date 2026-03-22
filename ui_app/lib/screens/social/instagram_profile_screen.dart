@@ -16,15 +16,51 @@ class InstagramProfileScreen extends StatefulWidget {
   State<InstagramProfileScreen> createState() => _InstagramProfileScreenState();
 }
 
-class _InstagramProfileScreenState extends State<InstagramProfileScreen> {
+class _InstagramProfileScreenState extends State<InstagramProfileScreen> with WidgetsBindingObserver {
   SocialProfile? profile;
   bool isLoading = true;
   String? error;
+  bool _isCheckingConnection = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadProfile();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && !_isCheckingConnection) {
+      // App came back to foreground - check if Instagram was connected
+      _checkConnectionAfterOAuth();
+    }
+  }
+
+  Future<void> _checkConnectionAfterOAuth() async {
+    if (_isCheckingConnection) return;
+    
+    _isCheckingConnection = true;
+    
+    // Wait a bit for the backend to process the OAuth callback
+    await Future.delayed(const Duration(seconds: 2));
+    
+    try {
+      await _refreshFromApi();
+      if (profile != null && mounted) {
+        _showSuccess('Instagram connected successfully!');
+      }
+    } catch (e) {
+      print('Connection check failed: $e');
+    } finally {
+      _isCheckingConnection = false;
+    }
   }
 
   Future<void> _loadProfile() async {
@@ -119,6 +155,10 @@ class _InstagramProfileScreenState extends State<InstagramProfileScreen> {
     }
 
     try {
+      setState(() {
+        isLoading = true;
+      });
+
       final res = await http.post(
         Uri.parse('${InstagramProfileScreen.baseUrl}/instagram/connect'),
         headers: {
@@ -135,6 +175,10 @@ class _InstagramProfileScreenState extends State<InstagramProfileScreen> {
       final data = jsonDecode(res.body);
       final oauthUrl = Uri.parse(data['url']);
 
+      setState(() {
+        isLoading = false;
+      });
+
       final launched = await launchUrl(
         oauthUrl,
         mode: LaunchMode.externalApplication,
@@ -144,8 +188,21 @@ class _InstagramProfileScreenState extends State<InstagramProfileScreen> {
         throw Exception("Could not open Instagram OAuth");
       }
       
+      // Show a message that user should return after connecting
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Complete the login in your browser, then return to the app'),
+            duration: Duration(seconds: 5),
+            backgroundColor: Colors.blue,
+          ),
+        );
+      }
 
     } catch (e) {
+      setState(() {
+        isLoading = false;
+      });
       _showError("Error: $e");
     }
   }
