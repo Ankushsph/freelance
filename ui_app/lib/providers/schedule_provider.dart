@@ -132,20 +132,18 @@ class ScheduleProvider extends ChangeNotifier {
     _clearError();
 
     try {
-
-
-      final startDate = DateTime(month.year, month.month - 1, 25);
-
-      final endDate = DateTime(month.year, month.month + 1, 5, 23, 59, 59);
-
-
+      // Check if user is logged in first
       final posts = await ApiService.getUserPosts(limit: 500);
-
       _posts = posts;
       _filterPostsBySelectedDate();
       _setLoading(false);
     } catch (e) {
-      _setError(e.toString());
+      // Don't show error if user is not logged in
+      if (!e.toString().contains('not logged in')) {
+        _setError(e.toString());
+      }
+      _posts = []; // Set empty list
+      _filteredPosts = [];
       _setLoading(false);
     }
   }

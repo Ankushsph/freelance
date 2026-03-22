@@ -71,6 +71,27 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads"), {
   }
 }));
 
+// API root endpoint
+app.get("/api", (req, res) => {
+  res.json({
+    success: true,
+    message: "KonnectMedia API is running",
+    version: "1.0.0",
+    endpoints: {
+      auth: "/api/auth",
+      users: "/api/users",
+      instagram: "/api/instagram",
+      facebook: "/api/facebook",
+      ai: "/api/ai",
+      posts: "/api/posts",
+      analytics: "/api/analytics",
+      trends: "/api/trends",
+      subscription: "/api/subscription",
+      admin: "/api/admin"
+    }
+  });
+});
+
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/otp", otpRouters);

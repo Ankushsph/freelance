@@ -51,17 +51,18 @@ function getGreetingResponse(): string {
 
 async function callAI(prompt: string, maxTokens: number = 30): Promise<string> {
   try {
+    console.log(`🤖 Calling OpenRouter API with prompt: "${prompt.substring(0, 50)}..."`);
+    
     const response = await axios.post(
       OPENROUTER_API_URL,
       {
         model: OPENROUTER_MODEL,
         messages: [
-          { role: "system", content: "Give short answer only. No explanation. Skip thinking." },
+          { role: "system", content: "You are a helpful assistant. Give concise, direct answers." },
           { role: "user", content: prompt }
         ],
         max_tokens: maxTokens,
-        temperature: 0.3,
-        reasoning_effort: "low"
+        temperature: 0.7,
       },
       {
         headers: {
@@ -70,15 +71,39 @@ async function callAI(prompt: string, maxTokens: number = 30): Promise<string> {
           "HTTP-Referer": "https://konnect.app",
           "X-Title": "Konnect"
         },
-        timeout: 15000,
+        timeout: 30000,
       }
     );
     
+    console.log(`✅ OpenRouter API response received`);
+    
     const content = response.data?.choices?.[0]?.message?.content?.trim() || "";
-    const reasoning = response.data?.choices?.[0]?.message?.reasoning?.trim() || "";
-    return content || cleanResponse(reasoning);
-  } catch (e) {
-    return "Try again";
+    
+    if (!content) {
+      console.warn("⚠️  Empty response from OpenRouter");
+      return "I'm having trouble responding right now. Please try again.";
+    }
+    
+    console.log(`📝 AI Response: "${content.substring(0, 100)}..."`);
+    return content;
+    
+  } catch (e: any) {
+    console.error("❌ OpenRouter API Error:");
+    console.error("  Status:", e.response?.status);
+    console.error("  Message:", e.message);
+    console.error("  Data:", JSON.stringify(e.response?.data, null, 2));
+    
+    if (e.response?.status === 401) {
+      return "API authentication failed. Please check API key.";
+    }
+    if (e.response?.status === 429) {
+      return "Rate limit exceeded. Please try again in a moment.";
+    }
+    if (e.code === 'ECONNABORTED' || e.code === 'ETIMEDOUT') {
+      return "Request timed out. Please try again.";
+    }
+    
+    return "I'm having trouble responding. Please try again.";
   }
 }
 

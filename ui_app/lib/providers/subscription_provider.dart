@@ -23,7 +23,7 @@ class SubscriptionProvider extends ChangeNotifier {
       // Add timeout to prevent infinite loading
       _subscription = await SubscriptionService.getMySubscription()
           .timeout(
-            const Duration(seconds: 10),
+            const Duration(seconds: 5),
             onTimeout: () {
               // Return default free subscription on timeout
               return Subscription(
@@ -41,7 +41,7 @@ class SubscriptionProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     } catch (e) {
-      // On error, set default free subscription
+      // On error, set default free subscription (don't show error to user)
       _subscription = Subscription(
         id: 'default',
         userId: '',
@@ -52,7 +52,10 @@ class SubscriptionProvider extends ChangeNotifier {
         amount: 0,
         currency: 'INR',
       );
-      _error = e.toString();
+      // Don't set error for "not logged in" scenarios
+      if (!e.toString().contains('not logged in')) {
+        _error = e.toString();
+      }
       _isLoading = false;
       notifyListeners();
     }

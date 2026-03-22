@@ -61,12 +61,17 @@ API Key: sk-or-v1-9d4c631f6ddcbfaa417221afd04b6f031b7c60e293bc3805efc7c30b387d14
 Model: meta-llama/llama-3.2-1b-instruct:free
 ```
 
-### Razorpay (⚠️ Demo Mode)
+### Razorpay (✅ Test Keys Added)
 ```
-Key ID: your_razorpay_key_id (placeholder)
-Key Secret: your_razorpay_key_secret (placeholder)
-Status: Demo mode active - no real credentials needed for testing
+Key ID: rzp_test_STRzCGTESz1pM7
+Key Secret: GkvoEbJBuLKx11r2zHt14XhC
+Status: Test mode - ready for testing on Android devices
 ```
+
+**Test Cards:**
+- Success: 4111 1111 1111 1111 (CVV: 123, Expiry: 12/25)
+- Failure: 4000 0000 0000 0002
+- UPI: success@razorpay
 
 ### Instagram API (⚠️ Needs Setup)
 ```

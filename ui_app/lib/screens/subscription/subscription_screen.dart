@@ -79,29 +79,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     setState(() => _isProcessing = true);
 
     try {
-      // TODO: Remove this bypass when Razorpay credentials are added
-      // For now, directly activate premium without payment
-      final success = await SubscriptionService.verifyPayment(
-        orderId: 'demo_order_${DateTime.now().millisecondsSinceEpoch}',
-        paymentId: 'demo_payment_${DateTime.now().millisecondsSinceEpoch}',
-        signature: 'demo_signature',
-      );
-
-      if (success && mounted) {
-        await context.read<SubscriptionProvider>().loadSubscription();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Premium subscription activated! (Demo Mode)'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.pop(context);
-      } else {
-        _showError('Failed to activate subscription');
-      }
-      
-      // ORIGINAL RAZORPAY CODE (Uncomment when credentials are ready):
-      /*
+      // Create Razorpay order
       final orderData = await SubscriptionService.createOrder();
 
       var options = {
@@ -109,17 +87,15 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         'amount': orderData['amount'],
         'currency': orderData['currency'],
         'name': 'KonnectMedia',
-        'description': 'Premium Subscription',
+        'description': 'Premium Subscription - ₹999/month',
         'order_id': orderData['orderId'],
         'prefill': {'contact': '', 'email': ''},
         'theme': {'color': '#6A5AE0'}
       };
 
       _razorpay.open(options);
-      */
     } catch (e) {
-      _showError('Failed to activate subscription: ${e.toString()}');
-    } finally {
+      _showError('Failed to create order: ${e.toString()}');
       setState(() => _isProcessing = false);
     }
   }
