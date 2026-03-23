@@ -3,8 +3,6 @@ import { Subscription } from '../models/Subscription.js';
 import { verifyToken } from '../middleware/auth.js';
 import type { Request } from 'express';
 import crypto from 'crypto';
-// @ts-ignore - Razorpay types may not be perfect
-import Razorpay from 'razorpay';
 
 interface AuthRequest extends Request {
   user?: { id: string };
@@ -16,20 +14,6 @@ const router = Router();
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || '';
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || '';
 
-// Initialize Razorpay instance only if credentials are available
-let razorpayInstance: Razorpay | null = null;
-if (RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET) {
-  try {
-    razorpayInstance = new Razorpay({
-      key_id: RAZORPAY_KEY_ID as string,
-      key_secret: RAZORPAY_KEY_SECRET as string,
-    });
-    console.log('Razorpay initialized successfully');
-  } catch (error) {
-    console.error('Failed to initialize Razorpay:', error);
-  }
-}
-
 // Premium plan price (in paise - ₹999 = 99900 paise)
 const PREMIUM_PRICE = 99900;
 
@@ -40,8 +24,8 @@ router.get('/razorpay-status', (req, res) => {
     razorpay: {
       keyIdConfigured: !!RAZORPAY_KEY_ID,
       keySecretConfigured: !!RAZORPAY_KEY_SECRET,
-      instanceInitialized: !!razorpayInstance,
-      keyIdPrefix: RAZORPAY_KEY_ID ? RAZORPAY_KEY_ID.substring(0, 8) + '...' : 'Not set'
+      keyIdPrefix: RAZORPAY_KEY_ID ? RAZORPAY_KEY_ID.substring(0, 8) + '...' : 'Not set',
+      usingRestApi: true
     }
   });
 });
@@ -89,7 +73,6 @@ router.post('/create-order', verifyToken, async (req: AuthRequest, res) => {
     console.log('Creating order for user:', userId);
     console.log('Razorpay Key ID:', RAZORPAY_KEY_ID ? 'Present' : 'Missing');
     console.log('Razorpay Key Secret:', RAZORPAY_KEY_SECRET ? 'Present' : 'Missing');
-    console.log('Razorpay Instance:', razorpayInstance ? 'Initialized' : 'Not initialized');
     
     // Validate Razorpay credentials
     if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
@@ -100,27 +83,9 @@ router.post('/create-order', verifyToken, async (req: AuthRequest, res) => {
       });
     }
     
-    // If Razorpay instance failed to initialize, try to create it now
-    if (!razorpayInstance) {
-      console.log('Attempting to initialize Razorpay instance...');
-      try {
-        razorpayInstance = new Razorpay({
-          key_id: RAZORPAY_KEY_ID as string,
-          key_secret: RAZORPAY_KEY_SECRET as string,
-        });
-        console.log('Razorpay instance created successfully');
-      } catch (initError: any) {
-        console.error('Failed to initialize Razorpay:', initError);
-        return res.status(500).json({ 
-          success: false, 
-          message: `Razorpay initialization failed: ${initError.message}` 
-        });
-      }
-    }
-    
-    // Create Razorpay order using official SDK
-    const options = {
-      amount: PREMIUM_PRICE, // amount in paise
+    // Use Razorpay REST API directly instead of SDK
+    const orderData = {
+      amount: PREMIUM_PRICE,
       currency: 'INR',
       receipt: `receipt_${userId}_${Date.now()}`,
       notes: {
@@ -129,29 +94,49 @@ router.post('/create-order', verifyToken, async (req: AuthRequest, res) => {
       }
     };
     
-    console.log('Creating Razorpay order with options:', options);
+    console.log('Creating order via REST API with data:', orderData);
     
     try {
-      const order = await razorpayInstance.orders.create(options);
-      console.log('Razorpay order created successfully:', order.id);
+      // Make direct HTTP request to Razorpay API
+      const auth = Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString('base64');
+      
+      const response = await fetch('https://api.razorpay.com/v1/orders', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Basic ${auth}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(orderData)
+      });
+      
+      const responseData: any = await response.json();
+      
+      if (!response.ok) {
+        console.error('Razorpay API error:', responseData);
+        return res.status(500).json({ 
+          success: false, 
+          message: `Order creation failed: ${responseData.error?.description || 'API error'}`,
+          error: responseData.error?.description
+        });
+      }
+      
+      console.log('Razorpay order created successfully:', responseData.id);
       
       res.json({
         success: true,
         data: {
-          orderId: order.id,
-          amount: order.amount,
-          currency: order.currency,
+          orderId: responseData.id,
+          amount: responseData.amount,
+          currency: responseData.currency,
           keyId: RAZORPAY_KEY_ID
         }
       });
-    } catch (orderError: any) {
-      console.error('Razorpay order creation failed:', orderError);
-      console.error('Error details:', JSON.stringify(orderError, null, 2));
-      
+    } catch (apiError: any) {
+      console.error('Razorpay API request failed:', apiError);
       return res.status(500).json({ 
         success: false, 
-        message: `Order creation failed: ${orderError.message || 'Unknown error'}`,
-        error: orderError.description || orderError.message
+        message: `API request failed: ${apiError.message}`,
+        error: apiError.message
       });
     }
   } catch (error: any) {
