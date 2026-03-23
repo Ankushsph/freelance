@@ -7,6 +7,11 @@ import 'widgets/trend_tab_bar.dart';
 import 'widgets/reels_section.dart';
 import 'widgets/audio_section.dart';
 import 'widgets/saved_grid.dart';
+import 'widgets/posts_section.dart';
+import 'widgets/hashtags_section.dart';
+import 'widgets/videos_section.dart';
+import 'widgets/articles_section.dart';
+import 'widgets/categories_section.dart';
 
 class TrendScreen extends StatefulWidget {
   const TrendScreen({Key? key}) : super(key: key);
@@ -16,7 +21,6 @@ class TrendScreen extends StatefulWidget {
 }
 
 class _TrendScreenState extends State<TrendScreen> {
-  late PageController _pageController;
   int _currentTab = 0;
   List<Trend> _popularTrends = [];
   List<Trend> _forYouTrends = [];
@@ -24,6 +28,7 @@ class _TrendScreenState extends State<TrendScreen> {
   bool _isLoading = false;
   String _selectedCategory = 'reels';
   String? _lastLoadedPlatform;
+  late PageController _pageController;
 
   @override
   void initState() {
@@ -95,13 +100,16 @@ class _TrendScreenState extends State<TrendScreen> {
     switch (platformId) {
       case 'LN':
         return const [
+          DropdownMenuItem(value: 'videos', child: Text('Videos')),
           DropdownMenuItem(value: 'posts', child: Text('Posts')),
-          DropdownMenuItem(value: 'articles', child: Text('Articles')),
         ];
       case 'X':
         return const [
-          DropdownMenuItem(value: 'posts', child: Text('Posts')),
-          DropdownMenuItem(value: 'threads', child: Text('Threads')),
+          DropdownMenuItem(value: 'tweets', child: Text('Tweets')),
+        ];
+      case 'FB':
+        return const [
+          DropdownMenuItem(value: 'posts', child: Text('Post')),
         ];
       default:
         return const [
@@ -111,6 +119,32 @@ class _TrendScreenState extends State<TrendScreen> {
           DropdownMenuItem(value: 'videos', child: Text('Videos')),
         ];
     }
+  }
+  
+  List<Map<String, dynamic>> _getTrendingHashtags(String platformId) {
+    if (platformId == 'LN') {
+      return [
+        {'name': 'innovation', 'followers': 38800000},
+        {'name': 'management', 'followers': 36000000},
+        {'name': 'humanresources', 'followers': 33200000},
+      ];
+    }
+    return [
+      {'name': 'Top model'},
+      {'name': 'makeup'},
+      {'name': 'photographer'},
+      {'name': 'fashion'},
+      {'name': 'fashionblogger'},
+    ];
+  }
+  
+  List<Map<String, dynamic>> _getCategories() {
+    return [
+      {'name': 'Healthcare'},
+      {'name': 'Marketing and Sales'},
+      {'name': 'Marketing & Advertising'},
+      {'name': 'Events'},
+    ];
   }
 
   @override
@@ -169,25 +203,43 @@ class _TrendScreenState extends State<TrendScreen> {
           body: Column(
             children: [
               TrendTabBar(currentTab: _currentTab, onTabChanged: _onTabChanged),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey[300]!),
-                    borderRadius: BorderRadius.circular(20),
+              // Category dropdown (hidden for Twitter since it only has Tweets)
+              if (platformId != 'X')
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey[300]!),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: DropdownButton<String>(
+                      value: resolvedCategory,
+                      isExpanded: true,
+                      underline: const SizedBox(),
+                      items: items,
+                      onChanged: (value) {
+                        if (value != null) _onCategoryChanged(value);
+                      },
+                    ),
                   ),
-                  child: DropdownButton<String>(
-                    value: resolvedCategory,
-                    isExpanded: true,
-                    underline: const SizedBox(),
-                    items: items,
-                    onChanged: (value) {
-                      if (value != null) _onCategoryChanged(value);
-                    },
+                )
+              else
+                // Show "Tweets" header for Twitter
+                const Padding(
+                  padding: EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Tweets',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
                   ),
                 ),
-              ),
               Expanded(
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator())
@@ -209,34 +261,259 @@ class _TrendScreenState extends State<TrendScreen> {
   }
 
   Widget _buildForYouTab() {
+    final platformProvider = context.read<PlatformProvider>();
+    final platformId = platformProvider.selectedPlatform;
+    final apiPlatform = platformProvider.getPlatformApiName(platformId);
+    
     return SingleChildScrollView(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        if (_selectedCategory == 'reels')
-          ReelsSection(trends: _forYouTrends, onSave: _onSaveTrend)
-        else if (_selectedCategory == 'audio')
+        // LinkedIn: Videos section
+        if (platformId == 'LN' && _selectedCategory == 'videos')
+          VideosSection(trends: _forYouTrends, onSave: _onSaveTrend),
+        
+        // LinkedIn: Articles section (always show after videos)
+        if (platformId == 'LN' && _selectedCategory == 'videos')
+          ArticlesSection(trends: _forYouTrends.take(3).toList(), onSave: _onSaveTrend),
+        
+        // Instagram: Reels
+        if (platformId == 'IG' && _selectedCategory == 'reels')
+          ReelsSection(trends: _forYouTrends, onSave: _onSaveTrend),
+        
+        // Audio section
+        if (_selectedCategory == 'audio')
           AudioSection(trends: _forYouTrends, onSave: _onSaveTrend),
+        
+        // Posts/Tweets section
+        if (_selectedCategory == 'posts' || _selectedCategory == 'tweets')
+          PostsSection(
+            trends: _forYouTrends,
+            onSave: _onSaveTrend,
+            platform: apiPlatform,
+          ),
+        
+        // Audio section for Facebook/Twitter (not LinkedIn)
+        if ((platformId == 'FB' || platformId == 'X') && _selectedCategory != 'audio')
+          AudioSection(trends: _forYouTrends.take(2).toList(), onSave: _onSaveTrend),
+        
+        // Hashtags section (not for Instagram reels)
+        if ((platformId == 'FB' || platformId == 'X' || platformId == 'LN') && 
+            _selectedCategory != 'reels')
+          HashtagsSection(
+            hashtags: _getTrendingHashtags(platformId),
+            showFollowers: platformId == 'LN',
+          ),
+        
+        // Categories section (LinkedIn only)
+        if (platformId == 'LN')
+          CategoriesSection(categories: _getCategories()),
       ]),
     );
   }
 
   Widget _buildPopularTab() {
+    final platformProvider = context.read<PlatformProvider>();
+    final platformId = platformProvider.selectedPlatform;
+    final apiPlatform = platformProvider.getPlatformApiName(platformId);
+    
     return SingleChildScrollView(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        if (_selectedCategory == 'reels')
-          ReelsSection(trends: _popularTrends, onSave: _onSaveTrend)
-        else if (_selectedCategory == 'audio')
+        // LinkedIn: Videos section
+        if (platformId == 'LN' && _selectedCategory == 'videos')
+          VideosSection(trends: _popularTrends, onSave: _onSaveTrend),
+        
+        // LinkedIn: Articles section
+        if (platformId == 'LN' && _selectedCategory == 'videos')
+          ArticlesSection(trends: _popularTrends.take(3).toList(), onSave: _onSaveTrend),
+        
+        // LinkedIn: Posts with sort icon
+        if (platformId == 'LN' && _selectedCategory == 'posts')
+          Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Posts',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.sort, color: Colors.black),
+                      onPressed: () {},
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                    ),
+                  ],
+                ),
+              ),
+              PostsSection(
+                trends: _popularTrends,
+                onSave: _onSaveTrend,
+                platform: apiPlatform,
+              ),
+            ],
+          ),
+        
+        // Instagram: Reels
+        if (platformId == 'IG' && _selectedCategory == 'reels')
+          ReelsSection(trends: _popularTrends, onSave: _onSaveTrend),
+        
+        // Audio section
+        if (_selectedCategory == 'audio')
           AudioSection(trends: _popularTrends, onSave: _onSaveTrend),
+        
+        // Posts/Tweets section (not LinkedIn)
+        if ((platformId == 'FB' || platformId == 'X') && 
+            (_selectedCategory == 'posts' || _selectedCategory == 'tweets'))
+          PostsSection(
+            trends: _popularTrends,
+            onSave: _onSaveTrend,
+            platform: apiPlatform,
+          ),
+        
+        // Audio section for Facebook/Twitter
+        if ((platformId == 'FB' || platformId == 'X') && _selectedCategory != 'audio')
+          AudioSection(trends: _popularTrends.take(2).toList(), onSave: _onSaveTrend),
+        
+        // Hashtags section
+        if ((platformId == 'FB' || platformId == 'X' || platformId == 'LN') && 
+            _selectedCategory != 'reels')
+          HashtagsSection(
+            hashtags: _getTrendingHashtags(platformId),
+            showFollowers: platformId == 'LN',
+          ),
+        
+        // Categories section (LinkedIn only)
+        if (platformId == 'LN')
+          CategoriesSection(categories: _getCategories()),
       ]),
     );
   }
 
   Widget _buildSavedTab() {
+    final platformProvider = context.read<PlatformProvider>();
+    final platformId = platformProvider.selectedPlatform;
+    final apiPlatform = platformProvider.getPlatformApiName(platformId);
+    
     return SingleChildScrollView(
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        if (_selectedCategory == 'reels')
-          SavedGrid(trends: _savedTrends, onUnsave: _onUnsaveTrend)
-        else if (_selectedCategory == 'audio')
+        // LinkedIn: Videos grid
+        if (platformId == 'LN' && _selectedCategory == 'videos') ...[
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 12, 16, 8),
+            child: Text(
+              'Videos',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+            ),
+          ),
+          if (_savedTrends.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 4,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                  childAspectRatio: 1,
+                ),
+                itemCount: _savedTrends.length,
+                itemBuilder: (context, index) {
+                  final trend = _savedTrends[index];
+                  return ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      trend.content.thumbnail,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: Colors.grey[300],
+                          child: const Icon(Icons.video_library),
+                        );
+                      },
+                    ),
+                  );
+                },
+              ),
+            ),
+          ArticlesSection(trends: _savedTrends.take(1).toList(), onSave: _onSaveTrend),
+        ],
+        
+        // Instagram: Reels grid
+        if (platformId == 'IG' && _selectedCategory == 'reels')
+          SavedGrid(trends: _savedTrends, onUnsave: _onUnsaveTrend),
+        
+        // Audio section
+        if (_selectedCategory == 'audio')
           AudioSection(trends: _savedTrends, onSave: _onSaveTrend),
+        
+        // Posts/Tweets grid
+        if ((_selectedCategory == 'posts' || _selectedCategory == 'tweets') && 
+            platformId != 'LN') ...[
+          if (_savedTrends.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: GridView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: platformId == 'X' ? 4 : 3,
+                  crossAxisSpacing: 8,
+                  mainAxisSpacing: 8,
+                  childAspectRatio: 1,
+                ),
+                itemCount: _savedTrends.length,
+                itemBuilder: (context, index) {
+                  final trend = _savedTrends[index];
+                  return ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.network(
+                      trend.content.thumbnail,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          color: Colors.grey[300],
+                          child: const Icon(Icons.image),
+                        );
+                      },
+                    ),
+                  );
+                },
+              ),
+            ),
+          if (_savedTrends.isNotEmpty)
+            PostsSection(
+              trends: [_savedTrends.first],
+              onSave: _onSaveTrend,
+              platform: apiPlatform,
+            ),
+        ],
+        
+        // Audio section for Facebook/Twitter
+        if ((platformId == 'FB' || platformId == 'X') && _selectedCategory != 'audio')
+          AudioSection(trends: _savedTrends.take(1).toList(), onSave: _onSaveTrend),
+        
+        // Hashtags section
+        if ((platformId == 'FB' || platformId == 'X' || platformId == 'LN') && 
+            _selectedCategory != 'reels')
+          HashtagsSection(
+            hashtags: _getTrendingHashtags(platformId),
+            showFollowers: platformId == 'LN',
+          ),
+        
+        // Categories section (LinkedIn only)
+        if (platformId == 'LN')
+          CategoriesSection(categories: _getCategories()),
       ]),
     );
   }

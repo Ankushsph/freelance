@@ -7,6 +7,7 @@ import '../../providers/platform_provider.dart';
 import '../../widgets/schedule_calendar.dart';
 import 'post_create_sheet.dart';
 import 'post_detail_sheet.dart';
+import '../../services/account_service.dart';
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({super.key});
@@ -16,17 +17,68 @@ class ScheduleScreen extends StatefulWidget {
 }
 
 class _ScheduleScreenState extends State<ScheduleScreen> {
+  String? activePlatform;
+  Map<String, dynamic>? activeAccountData;
+  bool isLoadingAccount = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadActiveAccount();
+  }
+
+  Future<void> _loadActiveAccount() async {
+    try {
+      final data = await AccountService.getConnectedAccounts();
+      final active = data['activePlatform'] as String?;
+      
+      if (active != null) {
+        final accounts = List<Map<String, dynamic>>.from(data['accounts'] ?? []);
+        final activeAcc = accounts.firstWhere(
+          (acc) => acc['platform'] == active,
+          orElse: () => {},
+        );
+        
+        setState(() {
+          activePlatform = active;
+          activeAccountData = activeAcc.isNotEmpty ? activeAcc : null;
+          isLoadingAccount = false;
+        });
+      } else {
+        setState(() {
+          isLoadingAccount = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        isLoadingAccount = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
       create: (_) => ScheduleProvider(),
-      child: const _ScheduleBody(),
+      child: _ScheduleBody(
+        activePlatform: activePlatform,
+        activeAccountData: activeAccountData,
+        isLoadingAccount: isLoadingAccount,
+      ),
     );
   }
 }
 
 class _ScheduleBody extends StatefulWidget {
-  const _ScheduleBody();
+  final String? activePlatform;
+  final Map<String, dynamic>? activeAccountData;
+  final bool isLoadingAccount;
+
+  const _ScheduleBody({
+    this.activePlatform,
+    this.activeAccountData,
+    required this.isLoadingAccount,
+  });
 
   @override
   State<_ScheduleBody> createState() => _ScheduleBodyState();
@@ -45,39 +97,73 @@ class _ScheduleBodyState extends State<_ScheduleBody> {
 
   @override
   Widget build(BuildContext context) {
+    final platform = widget.activePlatform ?? 'instagram';
+    final isLinkedIn = platform == 'linkedin';
+    
+    // Platform colors
+    final platformColor = _getPlatformColor(platform);
+    
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.maybePop(context),
-        ),
-        title: const Text('Schedule',
-            style: TextStyle(
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
-                fontSize: 18)),
-        centerTitle: true,
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 12),
-            child: ElevatedButton(
-              onPressed: () => _openCreateSheet(context, DateTime.now()),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF2563EB),
-                foregroundColor: Colors.white,
-                shape: const StadiumBorder(),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-                elevation: 0,
-              ),
-              child: const Text('+ Post',
-                  style:
-                      TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+        leading: Row(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.black),
+              onPressed: () => Navigator.maybePop(context),
             ),
-          ),
+            if (isLinkedIn && !widget.isLoadingAccount)
+              Padding(
+                padding: const EdgeInsets.only(left: 4),
+                child: _buildPlatformIcon(platform, size: 24),
+              ),
+          ],
+        ),
+        leadingWidth: isLinkedIn ? 80 : 56,
+        title: isLinkedIn
+            ? null
+            : const Text('Schedule',
+                style: TextStyle(
+                    color: Colors.black,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18)),
+        centerTitle: !isLinkedIn,
+        actions: [
+          if (isLinkedIn && widget.activeAccountData != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: CircleAvatar(
+                radius: 18,
+                backgroundImage: widget.activeAccountData!['avatar'] != null &&
+                        widget.activeAccountData!['avatar'].toString().isNotEmpty
+                    ? NetworkImage(widget.activeAccountData!['avatar'])
+                    : null,
+                child: widget.activeAccountData!['avatar'] == null ||
+                        widget.activeAccountData!['avatar'].toString().isEmpty
+                    ? const Icon(Icons.person, size: 20)
+                    : null,
+              ),
+            )
+          else if (!isLinkedIn)
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: ElevatedButton(
+                onPressed: () => _openCreateSheet(context, DateTime.now()),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF2563EB),
+                  foregroundColor: Colors.white,
+                  shape: const StadiumBorder(),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+                  elevation: 0,
+                ),
+                child: const Text('+ Post',
+                    style:
+                        TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
+              ),
+            ),
         ],
       ),
       body: Consumer<ScheduleProvider>(
@@ -94,6 +180,28 @@ class _ScheduleBodyState extends State<_ScheduleBody> {
 
           return Column(
             children: [
+              // ── Selected date pill (LinkedIn only) ────────────
+              if (isLinkedIn)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 24, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: platformColor,
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    child: Text(
+                      _selectedDateLabel(provider.selectedDate),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+
               // ── Calendar ──────────────────────────────────────
               ScheduleCalendar(
                 currentMonth: provider.currentMonth,
@@ -118,10 +226,10 @@ class _ScheduleBodyState extends State<_ScheduleBody> {
               Expanded(
                 child: Container(
                   width: double.infinity,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF2563EB),
+                  decoration: BoxDecoration(
+                    color: platformColor,
                     borderRadius:
-                        BorderRadius.vertical(top: Radius.circular(28)),
+                        const BorderRadius.vertical(top: Radius.circular(28)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -145,7 +253,7 @@ class _ScheduleBodyState extends State<_ScheduleBody> {
                                 ? _emptyState()
                                 : RefreshIndicator(
                                     onRefresh: provider.refresh,
-                                    color: const Color(0xFF2563EB),
+                                    color: platformColor,
                                     child: ListView.builder(
                                       padding: const EdgeInsets.fromLTRB(
                                           16, 0, 16, 24),
@@ -170,6 +278,52 @@ class _ScheduleBodyState extends State<_ScheduleBody> {
         },
       ),
     );
+  }
+
+  Color _getPlatformColor(String platform) {
+    switch (platform) {
+      case 'linkedin':
+        return const Color(0xFF0A66C2);
+      case 'facebook':
+        return const Color(0xFF1877F2);
+      case 'twitter':
+        return Colors.black;
+      case 'instagram':
+        return const Color(0xFF1DA1F2); // Blue theme
+      default:
+        return const Color(0xFF1DA1F2);
+    }
+  }
+
+  Widget _buildPlatformIcon(String platform, {double size = 24}) {
+    String iconName = platform;
+    if (platform == 'twitter') iconName = 'x';
+    if (platform == 'instagram') iconName = 'ig';
+    if (platform == 'facebook') iconName = 'fb';
+
+    try {
+      return Image.asset(
+        'assets/images/social/$iconName.png',
+        width: size,
+        height: size,
+        errorBuilder: (_, __, ___) => Icon(Icons.circle, size: size),
+      );
+    } catch (e) {
+      return Icon(Icons.circle, size: size);
+    }
+  }
+
+  String _selectedDateLabel(DateTime d) {
+    const days = [
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday',
+      'Sunday'
+    ];
+    return '${days[d.weekday - 1]}, ${d.day}';
   }
 
   // ── helpers ──────────────────────────────────────────────────────────────
@@ -247,7 +401,7 @@ class _ScheduleBodyState extends State<_ScheduleBody> {
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
                 content: Text('Post deleted'),
-                backgroundColor: Colors.red));
+                backgroundColor: Color(0xFF1DA1F2)));
           }
         },
         onEdit: () {

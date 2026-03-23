@@ -68,17 +68,6 @@ class _AnaScreenState extends State<AnaScreen> {
   PlatformConfig get config => getPlatformConfig(selectedPlatform);
 
   Future<void> _loadAnalytics() async {
-
-    if (selectedPlatform == 'X' || selectedPlatform == 'LN') {
-      setState(() {
-        isLoading = false;
-        error = null;
-        analyticsData = null;
-        posts = [];
-      });
-      return;
-    }
-
     setState(() {
       isLoading = true;
       error = null;
@@ -175,8 +164,6 @@ class _AnaScreenState extends State<AnaScreen> {
               _buildLoadingWidget()
             else if (error != null)
               _buildErrorWidget()
-            else if (selectedPlatform == 'X' || selectedPlatform == 'LN')
-              _buildUnsupportedPlatformWidget()
             else
               ...[
                 if (hasPermissionsError) _permissionsWarningCard(),
@@ -196,73 +183,6 @@ class _AnaScreenState extends State<AnaScreen> {
       child: Padding(
         padding: EdgeInsets.all(32.0),
         child: CircularProgressIndicator(),
-      ),
-    );
-  }
-
-  Widget _buildUnsupportedPlatformWidget() {
-    final platformName = selectedPlatform == 'X' ? 'X (Twitter)' : 'LinkedIn';
-    final platformColor = selectedPlatform == 'X' ? const Color(0xFF000000) : const Color(0xFF0A66C2);
-    
-    return _card(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            selectedPlatform == 'X' ? Icons.flutter_dash : Icons.business,
-            size: 64,
-            color: platformColor.withOpacity(0.5),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            '$platformName Analytics Coming Soon',
-            style: const TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-            ),
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Analytics for $platformName are currently under development. Please use Instagram or Facebook analytics for now.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.grey.shade600,
-              fontSize: 14,
-            ),
-          ),
-          const SizedBox(height: 24),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              ElevatedButton.icon(
-                onPressed: () {
-                  context.read<PlatformProvider>().setSelectedPlatform('IG');
-                  _loadAnalytics();
-                },
-                icon: const Icon(Icons.camera_alt, size: 18),
-                label: const Text('Go to Instagram'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFE4405F),
-                  foregroundColor: Colors.white,
-                ),
-              ),
-              const SizedBox(width: 12),
-              ElevatedButton.icon(
-                onPressed: () {
-                  context.read<PlatformProvider>().setSelectedPlatform('FB');
-                  _loadAnalytics();
-                },
-                icon: const Icon(Icons.facebook, size: 18),
-                label: const Text('Go to Facebook'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF1877F2),
-                  foregroundColor: Colors.white,
-                ),
-              ),
-            ],
-          ),
-        ],
       ),
     );
   }

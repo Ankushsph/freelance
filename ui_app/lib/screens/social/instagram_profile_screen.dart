@@ -214,7 +214,7 @@ class _InstagramProfileScreenState extends State<InstagramProfileScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: const Color(0xFF1DA1F2)),
             child: const Text('Disconnect'),
           ),
         ],
@@ -255,7 +255,7 @@ class _InstagramProfileScreenState extends State<InstagramProfileScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.red,
+        backgroundColor: const Color(0xFF1DA1F2),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -467,7 +467,7 @@ class _InstagramProfileScreenState extends State<InstagramProfileScreen> {
                           icon: const Icon(Icons.logout),
                           label: const Text('Disconnect Account'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red.shade400,
+                            backgroundColor: const Color(0xFF1DA1F2),
                             foregroundColor: Colors.white,
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(

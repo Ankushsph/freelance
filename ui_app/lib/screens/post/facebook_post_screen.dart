@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path/path.dart' as path;
+import 'package:intl/intl.dart';
 import '../../services/api_service.dart';
+import '../../services/account_service.dart';
 
 class FacebookPostScreen extends StatefulWidget {
   final DateTime? preSelectedDate;
@@ -17,169 +19,61 @@ class FacebookPostScreen extends StatefulWidget {
 
 class _FacebookPostScreenState extends State<FacebookPostScreen> {
   final captionController = TextEditingController();
-  final tagController = TextEditingController();
-  final topicController = TextEditingController();
-
   File? media;
-
-  bool isGeneratingCaption = false;
-  String? lastGeneratedCaption;
+  bool isPosting = false;
+  bool postNow = true;
+  DateTime? scheduledDate;
+  TimeOfDay? scheduledTime;
+  bool instagramSharingOff = true;
+  
+  Map<String, dynamic>? facebookAccount;
+  bool isLoadingAccount = true;
 
   @override
   void initState() {
     super.initState();
+    _loadFacebookAccount();
+    
     if (widget.preSelectedDate != null) {
       final now = DateTime.now();
       final preSelected = widget.preSelectedDate!;
 
       if (preSelected.isAfter(now)) {
-        setState(() {
-          postNow = false;
-          scheduledDate = DateTime(preSelected.year, preSelected.month, preSelected.day);
-          final nextHour = now.add(const Duration(hours: 1));
-          if (preSelected.day == now.day && preSelected.month == now.month && preSelected.year == now.year) {
-            scheduledTime = TimeOfDay(hour: nextHour.hour, minute: nextHour.minute);
-          } else {
-            scheduledTime = const TimeOfDay(hour: 9, minute: 0);
-          }
-        });
+        postNow = false;
+        scheduledDate = DateTime(preSelected.year, preSelected.month, preSelected.day);
+        final nextHour = now.add(const Duration(hours: 1));
+        if (preSelected.day == now.day && preSelected.month == now.month && preSelected.year == now.year) {
+          scheduledTime = TimeOfDay(hour: nextHour.hour, minute: nextHour.minute);
+        } else {
+          scheduledTime = const TimeOfDay(hour: 9, minute: 0);
+        }
       }
     }
   }
 
-  Future<void> _generateAICaption() async {
-    final userMessage = captionController.text.trim();
-    if (userMessage.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please write something first to generate a caption"),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
-    setState(() => isGeneratingCaption = true);
-
+  Future<void> _loadFacebookAccount() async {
     try {
-      final caption = await ApiService.generateCaption(
-        message: userMessage,
-        platform: 'Facebook',
+      final data = await AccountService.getConnectedAccounts();
+      final accounts = List<Map<String, dynamic>>.from(data['accounts'] ?? []);
+      final facebook = accounts.firstWhere(
+        (acc) => acc['platform'] == 'facebook',
+        orElse: () => {},
       );
-
+      
       setState(() {
-        lastGeneratedCaption = caption;
-        captionController.text = caption;
+        facebookAccount = facebook.isNotEmpty ? facebook : null;
+        isLoadingAccount = false;
       });
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("AI caption generated!"),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 2),
-          ),
-        );
-      }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("Failed to generate caption: $e"),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      setState(() => isGeneratingCaption = false);
+      setState(() {
+        isLoadingAccount = false;
+      });
     }
-  }
-
-  Future<void> _regenerateCaption() async {
-    if (lastGeneratedCaption == null) return;
-    setState(() {
-      captionController.text = lastGeneratedCaption!;
-    });
-    await _generateAICaption();
-  }
-
-  Widget _buildAIButton() {
-    return Container(
-      margin: const EdgeInsets.only(top: 8),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (lastGeneratedCaption != null)
-            Container(
-              margin: const EdgeInsets.only(right: 8),
-              child: InkWell(
-                onTap: isGeneratingCaption ? null : _regenerateCaption,
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade400),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: isGeneratingCaption
-                      ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                      : Icon(Icons.refresh, size: 18, color: Colors.grey.shade700),
-                ),
-              ),
-            ),
-          InkWell(
-            onTap: isGeneratingCaption ? null : _generateAICaption,
-            borderRadius: BorderRadius.circular(8),
-            child: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: const Color(0xFF6A5AE0),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: isGeneratingCaption
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : const Icon(Icons.auto_fix_high, size: 18, color: Colors.white),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   Future<void> pickMedia() async {
     final picker = ImagePicker();
-
-    final mediaType = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Select Media Type'),
-        content: const Text('What would you like to upload?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, 'image'),
-            child: const Text('Image'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Video'),
-          ),
-        ],
-      ),
-    );
-
-    if (mediaType == null) return;
-
-    XFile? file;
-    if (mediaType == 'image') {
-      file = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
-    }
+    final file = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
 
     if (file == null) return;
 
@@ -211,8 +105,6 @@ class _FacebookPostScreenState extends State<FacebookPostScreen> {
     setState(() => media = File(filePath));
   }
 
-  bool isPosting = false;
-
   Future<void> postContent() async {
     if (isPosting) return;
 
@@ -235,8 +127,6 @@ class _FacebookPostScreenState extends State<FacebookPostScreen> {
 
     final platforms = ['facebook'];
     final caption = captionController.text.trim();
-    final tags = tagController.text.trim();
-    final topics = topicController.text.trim();
     final mediaFile = media!;
     final isScheduled = !postNow && scheduledDate != null && scheduledTime != null;
 
@@ -267,8 +157,6 @@ class _FacebookPostScreenState extends State<FacebookPostScreen> {
       caption: caption,
       platforms: platforms,
       media: mediaFile,
-      tags: tags.isNotEmpty ? tags : null,
-      topics: topics.isNotEmpty ? topics : null,
       scheduledTime: scheduledTimeStr,
       isScheduled: isScheduled,
     );
@@ -278,8 +166,6 @@ class _FacebookPostScreenState extends State<FacebookPostScreen> {
     required String caption,
     required List<String> platforms,
     required File media,
-    String? tags,
-    String? topics,
     String? scheduledTime,
     required bool isScheduled,
   }) async {
@@ -288,7 +174,6 @@ class _FacebookPostScreenState extends State<FacebookPostScreen> {
         content: caption,
         platforms: platforms,
         media: media,
-        tags: tags,
         scheduledTime: scheduledTime,
       );
 
@@ -316,10 +201,6 @@ class _FacebookPostScreenState extends State<FacebookPostScreen> {
       }));
     }
   }
-
-  bool postNow = true;
-  DateTime? scheduledDate;
-  TimeOfDay? scheduledTime;
 
   Future<void> pickSchedule() async {
     final now = DateTime.now();
@@ -362,226 +243,310 @@ class _FacebookPostScreenState extends State<FacebookPostScreen> {
     setState(() {
       scheduledDate = date;
       scheduledTime = time;
+      postNow = false;
     });
-  }
-
-  Widget buildInput(String hint, IconData icon, TextEditingController controller) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
-        boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 2)],
-      ),
-      child: TextField(
-        controller: controller,
-        decoration: InputDecoration(
-          icon: Icon(icon, size: 20, color: const Color(0xFF1877F2)),
-          hintText: hint,
-          border: InputBorder.none,
-        ),
-      ),
-    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final hasContent = captionController.text.trim().isNotEmpty || media != null;
+    
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6FA),
+      backgroundColor: Colors.white,
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        title: Row(
-          children: [
-            Image.asset('assets/images/social/fb.png', width: 24, height: 24),
-            const SizedBox(width: 8),
-            const Text("Facebook Post"),
-          ],
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: () => Navigator.pop(context),
         ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                GestureDetector(
-                  onTap: pickMedia,
-                  child: Container(
-                    height: 130,
-                    width: 130,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.grey.shade400),
-                      image: media != null ? DecorationImage(image: FileImage(media!), fit: BoxFit.cover) : null,
-                    ),
-                    child: media == null
-                        ? Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: const [
-                              Icon(Icons.add_photo_alternate, size: 30, color: Colors.grey),
-                              SizedBox(height: 4),
-                              Text("Add Media", style: TextStyle(color: Colors.grey, fontSize: 12)),
-                            ],
-                          )
-                        : null,
-                  ),
+        title: const Text(
+          'Create post',
+          style: TextStyle(color: Colors.black, fontSize: 18),
+        ),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: ElevatedButton(
+              onPressed: (hasContent && !isPosting) ? postContent : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: hasContent
+                    ? const Color(0xFF1877F2)
+                    : Colors.grey.shade400,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(6),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Container(
-                    height: 130,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: Colors.grey.shade300),
-                    ),
-                    child: ValueListenableBuilder<TextEditingValue>(
-                      valueListenable: captionController,
-                      builder: (context, value, child) {
-                        return Column(
-                          children: [
-                            Expanded(
-                              child: TextField(
-                                controller: captionController,
-                                maxLines: null,
-                                decoration: const InputDecoration(
-                                  hintText: "Write a caption...",
-                                  border: InputBorder.none,
-                                ),
-                              ),
-                            ),
-                            if (value.text.isNotEmpty) Align(alignment: Alignment.bottomRight, child: _buildAIButton()),
-                          ],
-                        );
-                      },
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            buildInput("Tags", Icons.person, tagController),
-            buildInput("Topics / Hashtags", Icons.tag, topicController),
-            const SizedBox(height: 6),
-            Container(
-              margin: const EdgeInsets.only(bottom: 16),
-              padding: const EdgeInsets.all(14),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.grey.shade300),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+                elevation: 0,
               ),
+              child: const Text(
+                'POST',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          const Divider(height: 1),
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text("Post Schedule", style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
-                  const SizedBox(height: 10),
+                  // User info row
                   Row(
                     children: [
-                      Expanded(
-                        child: RadioListTile<bool>(
-                          value: true,
-                          groupValue: postNow,
-                          activeColor: const Color(0xFF1877F2),
-                          contentPadding: EdgeInsets.zero,
-                          title: const Text("Post Now"),
-                          onChanged: (v) => setState(() {
-                            postNow = true;
-                            scheduledDate = null;
-                            scheduledTime = null;
-                          }),
-                        ),
+                      CircleAvatar(
+                        radius: 20,
+                        backgroundImage: facebookAccount != null &&
+                                facebookAccount!['avatar'] != null &&
+                                facebookAccount!['avatar'].toString().isNotEmpty
+                            ? NetworkImage(facebookAccount!['avatar'])
+                            : null,
+                        child: facebookAccount == null ||
+                                facebookAccount!['avatar'] == null ||
+                                facebookAccount!['avatar'].toString().isEmpty
+                            ? const Icon(Icons.person, size: 20)
+                            : null,
                       ),
-                      Expanded(
-                        child: RadioListTile<bool>(
-                          value: false,
-                          groupValue: postNow,
-                          activeColor: const Color(0xFF1877F2),
-                          contentPadding: EdgeInsets.zero,
-                          title: const Text("Schedule"),
-                          onChanged: (v) => setState(() => postNow = false),
+                      const SizedBox(width: 12),
+                      Text(
+                        facebookAccount?['username'] ?? 'Facebook User',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w600,
+                          fontSize: 15,
                         ),
                       ),
                     ],
                   ),
-                  if (!postNow) ...[
-                    const SizedBox(height: 6),
-                    GestureDetector(
-                      onTap: pickSchedule,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  const SizedBox(height: 12),
+                  // Dropdowns row
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: const Color(0xFF1877F2)),
-                          color: const Color(0xFF1877F2).withOpacity(.05),
+                          color: const Color(0xFFE7F3FF),
+                          borderRadius: BorderRadius.circular(6),
                         ),
                         child: Row(
                           children: [
-                            const Icon(Icons.schedule, color: Color(0xFF1877F2)),
-                            const SizedBox(width: 10),
-                            Expanded(
-                              child: Text(
-                                scheduledDate == null
-                                    ? "Select date & time"
-                                    : "${scheduledDate!.day}/${scheduledDate!.month}/${scheduledDate!.year}  •  ${scheduledTime!.format(context)}",
-                                style: const TextStyle(color: Color(0xFF1877F2), fontWeight: FontWeight.w500),
-                              ),
+                            const Icon(Icons.people, size: 16, color: Color(0xFF1877F2)),
+                            const SizedBox(width: 4),
+                            const Text(
+                              'Friends',
+                              style: TextStyle(fontSize: 13, color: Color(0xFF1877F2)),
                             ),
-                            const Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
+                            const SizedBox(width: 4),
+                            Icon(Icons.arrow_drop_down, size: 18, color: Colors.grey.shade700),
                           ],
                         ),
                       ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFE7F3FF),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.add, size: 16, color: Color(0xFF1877F2)),
+                            const SizedBox(width: 4),
+                            const Text(
+                              'Album',
+                              style: TextStyle(fontSize: 13, color: Color(0xFF1877F2)),
+                            ),
+                            const SizedBox(width: 4),
+                            Icon(Icons.arrow_drop_down, size: 18, color: Colors.grey.shade700),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  // Instagram sharing toggle
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE7F3FF),
+                      borderRadius: BorderRadius.circular(6),
                     ),
-                  ],
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.camera_alt, size: 16, color: Color(0xFF1877F2)),
+                        const SizedBox(width: 4),
+                        Text(
+                          instagramSharingOff ? 'Off' : 'On',
+                          style: const TextStyle(fontSize: 13, color: Color(0xFF1877F2)),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(Icons.arrow_drop_down, size: 18, color: Colors.grey.shade700),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  // Text area
+                  TextField(
+                    controller: captionController,
+                    maxLines: null,
+                    decoration: const InputDecoration(
+                      hintText: 'Say something about this photo....',
+                      hintStyle: TextStyle(color: Colors.grey, fontSize: 16),
+                      border: InputBorder.none,
+                    ),
+                    style: const TextStyle(fontSize: 16),
+                    onChanged: (_) => setState(() {}),
+                  ),
+                  const SizedBox(height: 16),
+                  // Image preview
+                  if (media != null)
+                    Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.file(
+                            media!,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        Positioned(
+                          top: 8,
+                          left: 8,
+                          child: GestureDetector(
+                            onTap: pickMedia,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Row(
+                                children: const [
+                                  Icon(Icons.edit, size: 14),
+                                  SizedBox(width: 4),
+                                  Text('Edit', style: TextStyle(fontSize: 12)),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 8,
+                          left: 70,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Row(
+                              children: const [
+                                Icon(Icons.threed_rotation, size: 14),
+                                SizedBox(width: 4),
+                                Text('Make 3D', style: TextStyle(fontSize: 12)),
+                              ],
+                            ),
+                          ),
+                        ),
+                        Positioned(
+                          top: 8,
+                          right: 48,
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: const Icon(Icons.more_horiz, size: 16),
+                          ),
+                        ),
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: GestureDetector(
+                            onTap: () => setState(() => media = null),
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: const Icon(Icons.close, size: 16),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                 ],
               ),
             ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: isPosting ? null : postContent,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF1877F2),
-                foregroundColor: Colors.white,
-                minimumSize: const Size(double.infinity, 50),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+          ),
+          // Bottom toolbar
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              border: Border(top: BorderSide(color: Colors.grey.shade300)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _ToolbarButton(
+                  icon: Icons.image_outlined,
+                  color: Colors.green,
+                  onTap: pickMedia,
                 ),
-              ),
-              child: isPosting
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : Text(postNow ? "Post Now" : "Schedule Post"),
+                _ToolbarButton(
+                  icon: Icons.person_add_outlined,
+                  color: Colors.blue,
+                  onTap: () {},
+                ),
+                _ToolbarButton(
+                  icon: Icons.sentiment_satisfied_outlined,
+                  color: Colors.orange,
+                  onTap: () {},
+                ),
+                _ToolbarButton(
+                  icon: Icons.location_on_outlined,
+                  color: Colors.red,
+                  onTap: () {},
+                ),
+                _ToolbarButton(
+                  icon: Icons.more_horiz,
+                  color: Colors.grey,
+                  onTap: pickSchedule,
+                ),
+              ],
             ),
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: () {
-                setState(() {
-                  media = null;
-                  captionController.clear();
-                });
-              },
-              child: const Text(
-                "Save as Draft",
-                style: TextStyle(color: Color(0xFF1877F2)),
-              ),
-            ),
-            const SizedBox(height: 20),
-          ],
-        ),
+          ),
+        ],
       ),
+    );
+  }
+}
+
+class _ToolbarButton extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final VoidCallback onTap;
+
+  const _ToolbarButton({
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Icon(icon, size: 28, color: color),
     );
   }
 }

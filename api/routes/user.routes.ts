@@ -14,17 +14,66 @@ router.get("/me", verifyToken, async (req: AuthRequest, res) => {
     res.json({
       id: user._id,
       name: user.name,
+      username: user.username || user.name,
       email: user.email,
       number: user.number,
+      phone: user.phone,
+      dateOfBirth: user.dateOfBirth,
+      profilePicture: user.profilePicture,
       instagramOAuthState: user.instagramOAuthState,
       instagramUserId: user.instagramUserId,
       instagramAccessToken: user.instagramAccessToken,
+      instagramUsername: user.instagramUsername,
+      facebookAccessToken: user.facebookAccessToken,
+      facebookUserId: user.facebookUserId,
+      facebookUsername: user.facebookUsername,
+      linkedinAccessToken: user.linkedinAccessToken,
+      linkedinUserId: user.linkedinUserId,
+      linkedinUsername: user.linkedinUsername,
+      twitterAccessToken: user.twitterAccessToken,
+      twitterUserId: user.twitterUserId,
+      twitterUsername: user.twitterUsername,
       planType: user.planType,
       subscriptionStatus: user.subscriptionStatus,
       subscriptionExpiryDate: user.subscriptionExpiryDate,
     });
   } catch (err) {
     res.status(401).json({ message: "Invalid token" });
+  }
+});
+
+/* ---------- UPDATE PROFILE ---------- */
+router.put("/profile", verifyToken, async (req: AuthRequest, res) => {
+  try {
+    const user = await User.findById(req.user!.id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const { username, email, phone, dateOfBirth, password, profilePicture } = req.body;
+
+    if (username) user.username = username;
+    if (email) user.email = email;
+    if (phone) user.phone = phone;
+    if (dateOfBirth) user.dateOfBirth = dateOfBirth;
+    if (profilePicture) user.profilePicture = profilePicture;
+    if (password) user.password = password; // Will be hashed by pre-save hook
+
+    await user.save();
+
+    res.json({
+      success: true,
+      message: "Profile updated successfully",
+      user: {
+        id: user._id,
+        name: user.name,
+        username: user.username,
+        email: user.email,
+        phone: user.phone,
+        dateOfBirth: user.dateOfBirth,
+        profilePicture: user.profilePicture,
+      },
+    });
+  } catch (err: any) {
+    res.status(500).json({ message: err.message || "Failed to update profile" });
   }
 });
 
@@ -56,6 +105,59 @@ router.put("/:id", verifyToken, async (_req: AuthRequest, res) => {
 router.delete("/:id", verifyToken, async (_req: AuthRequest, res) => {
   await User.findByIdAndDelete(_req.params.id);
   res.json({ message: "User deleted" });
+});
+
+/* ---------- DISCONNECT SOCIAL ACCOUNT BY PLATFORM ---------- */
+router.delete("/social/:platform", verifyToken, async (req: AuthRequest, res) => {
+  try {
+    const user = await User.findById(req.user!.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    const platform = req.params.platform.toLowerCase();
+
+    switch (platform) {
+      case 'instagram':
+        user.instagramAccessToken = undefined;
+        user.instagramUserId = undefined;
+        user.instagramOAuthState = undefined;
+        user.instagramUsername = undefined;
+        break;
+      case 'facebook':
+        user.facebookAccessToken = undefined;
+        user.facebookUserId = undefined;
+        user.facebookOAuthState = undefined;
+        user.facebookPageId = undefined;
+        user.facebookUsername = undefined;
+        break;
+      case 'linkedin':
+        user.linkedinAccessToken = undefined;
+        user.linkedinRefreshToken = undefined;
+        user.linkedinUserId = undefined;
+        user.linkedinCompanyId = undefined;
+        user.linkedinOAuthState = undefined;
+        user.linkedinUsername = undefined;
+        break;
+      case 'twitter':
+        user.twitterAccessToken = undefined;
+        user.twitterRefreshToken = undefined;
+        user.twitterUserId = undefined;
+        user.twitterOAuthState = undefined;
+        user.twitterUsername = undefined;
+        break;
+      default:
+        return res.status(400).json({ success: false, message: "Invalid platform" });
+    }
+
+    await user.save();
+
+    console.log(`[User] ${platform} disconnected for user ${req.user!.id}`);
+    res.json({ success: true, message: `${platform} disconnected successfully` });
+  } catch (error: any) {
+    console.error(`[User] Error disconnecting social account:`, error);
+    res.status(500).json({ success: false, message: error.message || "Failed to disconnect account" });
+  }
 });
 
 /* ---------- DISCONNECT INSTAGRAM ---------- */

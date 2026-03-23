@@ -207,7 +207,7 @@ class _DayCell extends StatelessWidget {
                     shape: BoxShape.circle,
                     color: isSelected
                         ? Colors.white
-                        : const Color(0xFFEC4899),
+                        : const Color(0xFFEC4899), // Pink for all platforms
                   ),
                 ),
               ),

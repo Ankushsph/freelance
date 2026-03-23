@@ -57,7 +57,7 @@ export interface PostAnalytics {
  */
 export async function getPlatformAnalytics(
   userId: string,
-  platform: 'facebook' | 'instagram',
+  platform: 'facebook' | 'instagram' | 'linkedin' | 'twitter',
   days: number = 30
 ): Promise<PlatformAnalytics> {
   const user = await User.findById(userId);
@@ -70,6 +70,10 @@ export async function getPlatformAnalytics(
     return await getFacebookAnalytics(user, days);
   } else if (platform === 'instagram') {
     return await getInstagramAnalytics(user, days);
+  } else if (platform === 'linkedin') {
+    return await getLinkedInAnalytics(user, days);
+  } else if (platform === 'twitter') {
+    return await getTwitterAnalytics(user, days);
   }
 
   throw new Error(`Unsupported platform: ${platform}`);
@@ -214,6 +218,30 @@ async function getFacebookAnalytics(user: any, days: number): Promise<PlatformAn
 }
 
 /**
+ * Get LinkedIn Analytics
+ */
+async function getLinkedInAnalytics(user: any, days: number): Promise<PlatformAnalytics> {
+  if (!user.linkedinAccessToken) {
+    return getDummyAnalytics('linkedin', days);
+  }
+
+  // For now, return dummy data - LinkedIn API integration can be added later
+  return getDummyAnalytics('linkedin', days);
+}
+
+/**
+ * Get Twitter/X Analytics
+ */
+async function getTwitterAnalytics(user: any, days: number): Promise<PlatformAnalytics> {
+  if (!user.twitterAccessToken) {
+    return getDummyAnalytics('twitter', days);
+  }
+
+  // For now, return dummy data - Twitter API integration can be added later
+  return getDummyAnalytics('twitter', days);
+}
+
+/**
  * Get Instagram Account Analytics
  */
 async function getInstagramAnalytics(user: any, days: number): Promise<PlatformAnalytics> {
@@ -338,7 +366,7 @@ async function getInstagramAnalytics(user: any, days: number): Promise<PlatformA
  */
 export async function getPostAnalytics(
   userId: string,
-  platform: 'facebook' | 'instagram',
+  platform: 'facebook' | 'instagram' | 'linkedin' | 'twitter',
   postId: string
 ): Promise<PostAnalytics> {
   const user = await User.findById(userId);
@@ -384,6 +412,20 @@ export async function getPostAnalytics(
         comments: insights?.comments || 0,
       },
     };
+  } else if (platform === 'linkedin' || platform === 'twitter') {
+    // Return dummy data for LinkedIn and Twitter
+    return {
+      postId,
+      platform,
+      insights: {
+        impressions: 4523,
+        reach: 3245,
+        engagement: 892,
+        likes: 756,
+        comments: 89,
+        shares: 47,
+      },
+    };
   }
 
   throw new Error(`Unsupported platform: ${platform}`);
@@ -403,7 +445,7 @@ function getDummyAnalytics(platform: string, days: number): PlatformAnalytics {
     date.setDate(date.getDate() - i);
     
     history.push({
-      date: date.toISOString().split('T')[0],
+      date: date.toISOString().split('T')[0] || date.toISOString(),
       impressions: Math.floor(Math.random() * 3000) + 1000,
       reach: Math.floor(Math.random() * 2000) + 500,
       engagement: Math.floor(Math.random() * 500) + 100,

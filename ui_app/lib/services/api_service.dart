@@ -42,6 +42,64 @@ class ApiService {
     return data;
   }
 
+  static Future<void> updateProfile({
+    String? username,
+    String? email,
+    String? phone,
+    String? dateOfBirth,
+    String? password,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString(AuthKeys.token);
+
+    if (token == null) {
+      throw Exception('User not logged in');
+    }
+
+    final Map<String, dynamic> body = {};
+    if (username != null) body['username'] = username;
+    if (email != null) body['email'] = email;
+    if (phone != null) body['phone'] = phone;
+    if (dateOfBirth != null) body['dateOfBirth'] = dateOfBirth;
+    if (password != null) body['password'] = password;
+
+    final response = await http.put(
+      Uri.parse('$baseUrl/users/profile'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode(body),
+    );
+
+    if (response.statusCode != 200) {
+      final error = jsonDecode(response.body)['message'] ?? 'Failed to update profile';
+      throw Exception(error);
+    }
+  }
+
+  static Future<void> disconnectSocialAccount(String platform) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString(AuthKeys.token);
+
+    if (token == null) {
+      throw Exception('User not logged in');
+    }
+
+    final response = await http.delete(
+      Uri.parse('$baseUrl/users/social/$platform'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    if (response.statusCode != 200) {
+      final error = jsonDecode(response.body)['message'] ?? 'Failed to disconnect account';
+      throw Exception(error);
+    }
+  }
+
   static Future<Map<String, String>> loginUser({
     required String email,
     required String password,

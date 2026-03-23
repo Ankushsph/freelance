@@ -64,7 +64,7 @@ class _SchedulePickerSheetState extends State<SchedulePickerSheet> {
     if (dt.isBefore(now.add(const Duration(minutes: 5)))) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Please select a future time (at least 5 min from now)'),
-          backgroundColor: Colors.red));
+          backgroundColor: Color(0xFF1DA1F2)));
       return;
     }
     Navigator.pop(context, {'date': _selectedDate, 'time': _selectedTime});

@@ -162,7 +162,7 @@ class _LinkedInProfileScreenState extends State<LinkedInProfileScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            style: TextButton.styleFrom(foregroundColor: const Color(0xFF1DA1F2)),
             child: const Text('Disconnect'),
           ),
         ],
@@ -203,7 +203,7 @@ class _LinkedInProfileScreenState extends State<LinkedInProfileScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.red,
+        backgroundColor: const Color(0xFF1DA1F2),
         behavior: SnackBarBehavior.floating,
       ),
     );
@@ -329,88 +329,226 @@ class _LinkedInProfileScreenState extends State<LinkedInProfileScreen> {
   Widget _buildProfileScreen(SocialProfile p) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xff0077B5),
-              Color(0xff005885),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+        color: Colors.white,
         child: SafeArea(
           child: Column(
             children: [
               _buildTopBar(showRefresh: true),
               Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(32),
-                    ),
-                  ),
+                child: SingleChildScrollView(
                   child: Column(
                     children: [
-                      CircleAvatar(
-                        radius: 50,
-                        backgroundColor: const Color(0xff0077B5),
-                        child: p.profileImage.isNotEmpty
-                            ? null
-                            : const Icon(Icons.person, size: 50, color: Colors.white),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        p.name,
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      if (p.username.isNotEmpty) ...[
-                        const SizedBox(height: 4),
-                        Text(
-                          p.username,
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 12),
-                      if (p.bio.isNotEmpty)
-                        Text(
-                          p.bio,
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            color: Colors.grey.shade700,
-                            fontSize: 14,
-                          ),
-                        ),
-                      const SizedBox(height: 24),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: p.stats.entries
-                            .map((e) => _buildStat(e.value, e.key))
-                            .toList(),
-                      ),
-                      const Spacer(),
-                      SizedBox(
+                      // Cover Photo
+                      Container(
+                        height: 120,
                         width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: _disconnect,
-                          icon: const Icon(Icons.logout),
-                          label: const Text('Disconnect Account'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.red.shade400,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              const Color(0xff0077B5).withOpacity(0.3),
+                              const Color(0xff005885).withOpacity(0.3),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
                           ),
+                        ),
+                      ),
+                      
+                      Transform.translate(
+                        offset: const Offset(0, -50),
+                        child: Column(
+                          children: [
+                            // Profile Picture
+                            Container(
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 4),
+                              ),
+                              child: CircleAvatar(
+                                radius: 60,
+                                backgroundColor: const Color(0xff0077B5),
+                                child: p.profileImage.isNotEmpty
+                                    ? null
+                                    : const Icon(Icons.person, size: 60, color: Colors.white),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            // Name
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              child: Text(
+                                p.name,
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            if (p.username.isNotEmpty) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                p.username,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey.shade600,
+                                ),
+                              ),
+                            ],
+                            const SizedBox(height: 8),
+                            // Headline
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 32),
+                              child: Text(
+                                'Professional | Innovator | Leader',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.grey.shade700,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            if (p.bio.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 32),
+                                child: Text(
+                                  p.bio,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            const SizedBox(height: 12),
+                            // Connections count
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 32),
+                              child: Text(
+                                '500+ connections',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: const Color(0xff0077B5),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            // Action buttons
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: OutlinedButton(
+                                      onPressed: () {},
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: const Color(0xff0077B5),
+                                        side: const BorderSide(color: Color(0xff0077B5)),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(20),
+                                        ),
+                                        padding: const EdgeInsets.symmetric(vertical: 8),
+                                      ),
+                                      child: const Text('Open to', style: TextStyle(fontWeight: FontWeight.w600)),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: ElevatedButton(
+                                      onPressed: () {},
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xff0077B5),
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(20),
+                                        ),
+                                        padding: const EdgeInsets.symmetric(vertical: 8),
+                                        elevation: 0,
+                                      ),
+                                      child: const Text('Add section', style: TextStyle(fontWeight: FontWeight.w600)),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                            // Open to work card
+                            Container(
+                              margin: const EdgeInsets.symmetric(horizontal: 20),
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                color: const Color(0xffEFF6FC),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: const Color(0xff0077B5).withOpacity(0.3)),
+                              ),
+                              child: Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(8),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white,
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: const Icon(
+                                      Icons.work_outline,
+                                      color: Color(0xff0077B5),
+                                      size: 24,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        const Text(
+                                          'Open to work',
+                                          style: TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 15,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 2),
+                                        Text(
+                                          'Show recruiters you\'re open',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: Colors.grey.shade700,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey.shade600),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                            // Disconnect button
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              child: SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton.icon(
+                                  onPressed: _disconnect,
+                                  icon: const Icon(Icons.logout),
+                                  label: const Text('Disconnect Account'),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: const Color(0xFF1DA1F2),
+                                    side: const BorderSide(color: Color(0xFF1DA1F2)),
+                                    padding: const EdgeInsets.symmetric(vertical: 14),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 24),
+                          ],
                         ),
                       ),
                     ],
@@ -425,7 +563,8 @@ class _LinkedInProfileScreenState extends State<LinkedInProfileScreen> {
   }
 
   Widget _buildTopBar({required bool showRefresh}) {
-    return Padding(
+    return Container(
+      color: Colors.white,
       padding: const EdgeInsets.all(16),
       child: Row(
         children: [
@@ -434,17 +573,17 @@ class _LinkedInProfileScreenState extends State<LinkedInProfileScreen> {
             child: Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: Colors.white24,
+                color: Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.arrow_back, color: Colors.white),
+              child: const Icon(Icons.arrow_back, color: Colors.black),
             ),
           ),
           const Spacer(),
           const Text(
             'LinkedIn',
             style: TextStyle(
-              color: Colors.white,
+              color: Colors.black,
               fontSize: 18,
               fontWeight: FontWeight.bold,
             ),
@@ -456,10 +595,10 @@ class _LinkedInProfileScreenState extends State<LinkedInProfileScreen> {
               child: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: Colors.white24,
+                  color: Colors.grey.shade100,
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Icon(Icons.refresh, color: Colors.white),
+                child: const Icon(Icons.refresh, color: Colors.black),
               ),
             )
           else

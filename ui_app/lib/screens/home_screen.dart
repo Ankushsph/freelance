@@ -943,7 +943,7 @@ class _PostTodoWidgetState extends State<PostTodoWidget> {
         break;
       case PostStatus.failed:
         statusIcon = Icons.error;
-        statusColor = Colors.red;
+        statusColor = const Color(0xFF1DA1F2);
         break;
       default:
         statusIcon = Icons.help;

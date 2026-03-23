@@ -20,10 +20,10 @@ router.get("/:platform", verifyToken, requirePremium, async (req: any, res) => {
     const { platform } = req.params;
     const days = parseInt(req.query.days as string) || 30;
 
-    if (!['facebook', 'instagram'].includes(platform)) {
+    if (!['facebook', 'instagram', 'linkedin', 'twitter'].includes(platform)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid platform. Supported: facebook, instagram"
+        message: "Invalid platform. Supported: facebook, instagram, linkedin, twitter"
       });
     }
 
@@ -57,10 +57,10 @@ router.get("/:platform/posts/:postId", verifyToken, requirePremium, async (req: 
   try {
     const { platform, postId } = req.params;
 
-    if (!['facebook', 'instagram'].includes(platform)) {
+    if (!['facebook', 'instagram', 'linkedin', 'twitter'].includes(platform)) {
       return res.status(400).json({
         success: false,
-        message: "Invalid platform. Supported: facebook, instagram"
+        message: "Invalid platform. Supported: facebook, instagram, linkedin, twitter"
       });
     }
 

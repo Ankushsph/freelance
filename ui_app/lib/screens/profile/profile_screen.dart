@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../services/api_service.dart';
 import '../../services/auth_storage.dart';
-import '../../widgets/k_button.dart';
 import 'edit_profile_screen.dart';
+import 'social_profiles_screen.dart';
 import 'notification_settings_screen.dart';
 import 'help_support_screen.dart';
-import 'social_profiles_screen.dart';
-import '../boost/boost_history_screen.dart';
+import 'invite_friends_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -16,10 +16,8 @@ class ProfileScreen extends StatefulWidget {
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-  String userName = '';
-  String userEmail = '';
-  String? profileImageUrl;
-  bool isLoading = false;
+  bool isLoading = true;
+  Map<String, dynamic>? userData;
 
   @override
   void initState() {
@@ -28,20 +26,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Future<void> _loadUserData() async {
-    final prefs = await SharedPreferences.getInstance();
-    setState(() {
-      userName = prefs.getString('user_name') ?? 'User';
-      userEmail = prefs.getString('user_email') ?? '';
-      profileImageUrl = prefs.getString('user_profile_image');
-    });
+    setState(() => isLoading = true);
+    
+    try {
+      final data = await ApiService.getMe();
+      setState(() {
+        userData = data;
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() => isLoading = false);
+    }
   }
 
-  Future<void> _logout() async {
+  Future<void> _handleLogout() async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
+        title: const Text('Log out'),
+        content: const Text('Are you sure you want to log out?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -49,54 +52,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Logout'),
+            style: TextButton.styleFrom(foregroundColor: const Color(0xFF1DA1F2)),
+            child: const Text('Log out'),
           ),
         ],
       ),
     );
 
-    if (confirmed != true) return;
-
-    setState(() => isLoading = true);
-
-    try {
-
-      await AuthStorage.clearAll();
-
-      if (!mounted) return;
-      Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
-    } catch (e) {
+    if (confirmed == true && mounted) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.clear();
+      
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Logout failed: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
       }
-      setState(() => isLoading = false);
     }
-  }
-
-  Widget buildTile({
-    required IconData icon,
-    required String title,
-    VoidCallback? onTap,
-    Color color = Colors.black,
-  }) {
-    return ListTile(
-      leading: Icon(icon, color: color),
-      title: Text(
-        title,
-        style: TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w500,
-          color: color,
-        ),
-      ),
-      onTap: onTap,
-    );
   }
 
   @override
@@ -111,189 +81,181 @@ class _ProfileScreenState extends State<ProfileScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          "Profile",
-          style: TextStyle(color: Colors.black),
+          'Profile',
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
         ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: Column(
-          children: [
-            const SizedBox(height: 20),
-
-            Row(
-              children: [
-                Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    color: Colors.grey.shade200,
-                    shape: BoxShape.circle,
-                    image: profileImageUrl != null && profileImageUrl!.isNotEmpty
-                        ? DecorationImage(
-                            image: NetworkImage(profileImageUrl!),
-                            fit: BoxFit.cover,
-                          )
-                        : null,
+      body: isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              child: Column(
+                children: [
+                  const SizedBox(height: 24),
+                  _buildProfileHeader(),
+                  const SizedBox(height: 32),
+                  _buildMenuItem(
+                    icon: Icons.edit_outlined,
+                    title: 'Edit profile',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const EditProfileScreen(),
+                        ),
+                      ).then((_) => _loadUserData());
+                    },
                   ),
-                  child: profileImageUrl == null || profileImageUrl!.isEmpty
-                      ? const Icon(Icons.person, size: 36, color: Colors.grey)
-                      : null,
-                ),
-                const SizedBox(width: 16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      userName,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    if (userEmail.isNotEmpty)
-                      Text(
-                        userEmail,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade600,
+                  _buildMenuItem(
+                    icon: Icons.people_outline,
+                    title: 'Social Profiles',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const SocialProfilesScreen(),
                         ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 30),
-
-            buildTile(
-              icon: Icons.edit,
-              title: "Edit profile",
-              onTap: () async {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const EditProfileScreen()),
-                );
-
-                if (result == true) {
-                  _loadUserData();
-                }
-              },
-            ),
-            buildTile(
-              icon: Icons.workspace_premium_outlined,
-              title: "My Subscription",
-              color: const Color(0xff6A5AE0),
-              onTap: () {
-                Navigator.pushNamed(context, '/subscription').then((_) {
-                  _loadUserData();
-                });
-              },
-            ),
-            buildTile(
-              icon: Icons.person_outline, 
-              title: "Social Profiles",
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const SocialProfilesScreen()),
-                );
-              },
-            ),
-            buildTile(
-              icon: Icons.swap_horiz,
-              title: "Switch Account",
-              color: const Color(0xFF0095F6),
-              onTap: () {
-                Navigator.pushNamed(context, '/account-switcher');
-              },
-            ),
-            buildTile(
-              icon: Icons.notifications_none,
-              title: "Notification",
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const NotificationSettingsScreen()),
-                );
-              },
-            ),
-            buildTile(
-              icon: Icons.trending_up,
-              title: "Boost History",
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const BoostHistoryScreen()),
-                );
-              },
-            ),
-            buildTile(
-              icon: Icons.help_outline,
-              title: "Help & Support",
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const HelpSupportScreen()),
-                );
-              },
-            ),
-            buildTile(
-              icon: Icons.person_add_alt, 
-              title: "Invite friends",
-              onTap: () {
-                showDialog(
-                  context: context,
-                  builder: (context) => AlertDialog(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                    title: Row(
-                      children: [
-                        Icon(Icons.rocket_launch, color: Colors.blue.shade700),
-                        const SizedBox(width: 8),
-                        const Text('Coming Soon'),
-                      ],
-                    ),
-                    content: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.people_outline,
-                          size: 64,
-                          color: Colors.grey.shade400,
+                      );
+                    },
+                  ),
+                  _buildMenuItem(
+                    icon: Icons.notifications_outlined,
+                    title: 'Notification',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const NotificationSettingsScreen(),
                         ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'Invite friends feature is currently under development.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(fontSize: 14),
+                      );
+                    },
+                  ),
+                  _buildMenuItem(
+                    icon: Icons.help_outline,
+                    title: 'Help & Support',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const HelpSupportScreen(),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'Stay tuned for updates!',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.grey.shade600,
-                            fontStyle: FontStyle.italic,
+                      );
+                    },
+                  ),
+                  _buildMenuItem(
+                    icon: Icons.person_add_outlined,
+                    title: 'Invite friends',
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const InviteFriendsScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  _buildMenuItem(
+                    icon: Icons.logout,
+                    title: 'Log - out',
+                    isLogout: true,
+                    onTap: _handleLogout,
+                  ),
+                  const SizedBox(height: 32),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: () async {
+                          await _loadUserData();
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Changes saved successfully')),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF1DA1F2),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(28),
                           ),
                         ),
-                      ],
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('Got it'),
+                        child: const Text(
+                          'Save changes',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
-                    ],
+                    ),
                   ),
-                );
-              },
+                  const SizedBox(height: 32),
+                ],
+              ),
             ),
-            const Spacer(),
-            KButton(
-              text: isLoading ? "Logging out..." : "Logout",
-              onTap: isLoading ? null : _logout,
+    );
+  }
+
+  Widget _buildProfileHeader() {
+    final username = userData?['username'] ?? userData?['email']?.split('@')[0] ?? 'User';
+    final profilePicture = userData?['profilePicture'];
+
+    return Column(
+      children: [
+        CircleAvatar(
+          radius: 50,
+          backgroundImage: profilePicture != null && profilePicture.isNotEmpty
+              ? NetworkImage(profilePicture)
+              : null,
+          child: profilePicture == null || profilePicture.isEmpty
+              ? const Icon(Icons.person, size: 50, color: Colors.grey)
+              : null,
+        ),
+        const SizedBox(height: 16),
+        Text(
+          username,
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMenuItem({
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    bool isLogout = false,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: isLogout ? const Color(0xFF1DA1F2) : Colors.black,
+              size: 24,
             ),
-            const SizedBox(height: 20),
+            const SizedBox(width: 16),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+                color: isLogout ? const Color(0xFF1DA1F2) : Colors.black,
+              ),
+            ),
           ],
         ),
       ),
