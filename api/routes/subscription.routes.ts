@@ -3,6 +3,7 @@ import { Subscription } from '../models/Subscription.js';
 import { verifyToken } from '../middleware/auth.js';
 import type { Request } from 'express';
 import crypto from 'crypto';
+// @ts-ignore - Razorpay types may not be perfect
 import Razorpay from 'razorpay';
 
 interface AuthRequest extends Request {
@@ -72,12 +73,36 @@ router.post('/create-order', verifyToken, async (req: AuthRequest, res) => {
   try {
     const userId = req.user!.id;
     
-    // Validate Razorpay credentials and instance
-    if (!razorpayInstance || !RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
+    console.log('Creating order for user:', userId);
+    console.log('Razorpay Key ID:', RAZORPAY_KEY_ID ? 'Present' : 'Missing');
+    console.log('Razorpay Key Secret:', RAZORPAY_KEY_SECRET ? 'Present' : 'Missing');
+    console.log('Razorpay Instance:', razorpayInstance ? 'Initialized' : 'Not initialized');
+    
+    // Validate Razorpay credentials
+    if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
+      console.error('Razorpay credentials missing');
       return res.status(500).json({ 
         success: false, 
         message: 'Razorpay credentials not configured' 
       });
+    }
+    
+    // If Razorpay instance failed to initialize, try to create it now
+    if (!razorpayInstance) {
+      console.log('Attempting to initialize Razorpay instance...');
+      try {
+        razorpayInstance = new Razorpay({
+          key_id: RAZORPAY_KEY_ID as string,
+          key_secret: RAZORPAY_KEY_SECRET as string,
+        });
+        console.log('Razorpay instance created successfully');
+      } catch (initError: any) {
+        console.error('Failed to initialize Razorpay:', initError);
+        return res.status(500).json({ 
+          success: false, 
+          message: `Razorpay initialization failed: ${initError.message}` 
+        });
+      }
     }
     
     // Create Razorpay order using official SDK
@@ -91,21 +116,33 @@ router.post('/create-order', verifyToken, async (req: AuthRequest, res) => {
       }
     };
     
-    const order = await razorpayInstance.orders.create(options);
+    console.log('Creating Razorpay order with options:', options);
     
-    console.log('Razorpay order created:', order.id);
-    
-    res.json({
-      success: true,
-      data: {
-        orderId: order.id,
-        amount: order.amount,
-        currency: order.currency,
-        keyId: RAZORPAY_KEY_ID
-      }
-    });
+    try {
+      const order = await razorpayInstance.orders.create(options);
+      console.log('Razorpay order created successfully:', order.id);
+      
+      res.json({
+        success: true,
+        data: {
+          orderId: order.id,
+          amount: order.amount,
+          currency: order.currency,
+          keyId: RAZORPAY_KEY_ID
+        }
+      });
+    } catch (orderError: any) {
+      console.error('Razorpay order creation failed:', orderError);
+      console.error('Error details:', JSON.stringify(orderError, null, 2));
+      
+      return res.status(500).json({ 
+        success: false, 
+        message: `Order creation failed: ${orderError.message || 'Unknown error'}`,
+        error: orderError.description || orderError.message
+      });
+    }
   } catch (error: any) {
-    console.error('Error creating Razorpay order:', error);
+    console.error('Error in create-order endpoint:', error);
     res.status(500).json({ 
       success: false, 
       message: error.message || 'Failed to create subscription order' 
