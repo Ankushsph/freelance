@@ -200,6 +200,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
               },
             ),
             buildTile(
+              icon: Icons.swap_horiz,
+              title: "Switch Account",
+              color: const Color(0xFF0095F6),
+              onTap: () {
+                Navigator.pushNamed(context, '/account-switcher');
+              },
+            ),
+            buildTile(
               icon: Icons.notifications_none,
               title: "Notification",
               onTap: () {

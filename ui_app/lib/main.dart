@@ -19,6 +19,8 @@ import 'screens/ai/ai_chat_screen.dart';
 import 'screens/ai/screens/conversation_list_screen.dart';
 import 'screens/ai/providers/chat_provider.dart';
 import 'screens/profile/profile_screen.dart';
+import 'screens/profile/account_switcher_screen.dart';
+import 'screens/profile/social_profiles_screen.dart';
 import 'screens/launcher_screen.dart';
 import 'screens/authentication/reset_pass_screen.dart';
 import 'screens/social/instagram_auth_view.dart';
@@ -83,6 +85,8 @@ class MyApp extends StatelessWidget {
           '/ai_chat': (context) => const AIChatScreen(),
           '/ai_conversations': (context) => const ConversationListScreen(),
           '/profile': (context) => const ProfileScreen(),
+          '/account-switcher': (context) => const AccountSwitcherScreen(),
+          '/social-profiles': (context) => const SocialProfilesScreen(),
           '/login-instagram': (context) => InstagramOAuthPage(),
           '/instagram': (context) => const InstagramProfileScreen(),
           '/x': (context) => const TwitterProfileScreen(),

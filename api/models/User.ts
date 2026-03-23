@@ -39,6 +39,9 @@ export interface IUser extends Document {
   razorpayOrderId?: string;
   razorpaySignature?: string;
 
+  // Active Platform
+  activePlatform?: 'instagram' | 'facebook' | 'twitter' | 'linkedin';
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -82,6 +85,9 @@ const UserSchema = new Schema<IUser>(
     razorpayPaymentId: { type: String },
     razorpayOrderId: { type: String },
     razorpaySignature: { type: String },
+    
+    // Active Platform
+    activePlatform: { type: String, enum: ['instagram', 'facebook', 'twitter', 'linkedin'] },
   },
   { timestamps: true }
 );

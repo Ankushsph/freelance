@@ -13,6 +13,7 @@ import authRoutes from "./routes/auth.routes.js";
 import userRoutes from "./routes/user.routes.js";
 import otpRouters from "./routes/otp.routes.js"
 import testOtpRoutes from "./routes/test-otp.routes.js";
+import accountRoutes from "./routes/account.routes.js";
 import instagramRoutes from "./routes/instagram.routes.js";
 import facebookRoutes from "./routes/facebook.routers.js";
 import linkedinRoutes from "./routes/linkedin.routes.js";
@@ -96,6 +97,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/otp", otpRouters);
 app.use("/api/test-otp", testOtpRoutes);
+app.use("/api/accounts", accountRoutes);
 app.use("/api/instagram", instagramRoutes);
 app.use("/api/facebook", facebookRoutes);
 app.use("/api/linkedin", linkedinRoutes);
