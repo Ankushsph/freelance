@@ -7,6 +7,8 @@ import '../../../services/api_service.dart';
 import 'dart:convert';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
+import 'package:app_links/app_links.dart';
+import 'dart:async';
 
 class FacebookProfileScreen extends StatefulWidget {
   static final String baseUrl = dotenv.env['API_BASE_URL']!;
@@ -16,54 +18,45 @@ class FacebookProfileScreen extends StatefulWidget {
   State<FacebookProfileScreen> createState() => _FacebookProfileScreenState();
 }
 
-class _FacebookProfileScreenState extends State<FacebookProfileScreen> with WidgetsBindingObserver {
+class _FacebookProfileScreenState extends State<FacebookProfileScreen> {
   SocialProfile? profile;
   bool isLoading = true;
   String? error;
   List<Map<String, dynamic>> pages = [];
   String? selectedPageId;
   bool isLoadingPages = false;
-  bool _isCheckingConnection = false;
+  StreamSubscription? _linkSubscription;
+  final _appLinks = AppLinks();
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
+    _initDeepLinks();
     print('[FacebookScreen] initState called');
     _loadProfile();
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
+    _linkSubscription?.cancel();
     super.dispose();
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && !_isCheckingConnection) {
-      // App came back to foreground - check if Facebook was connected
-      _checkConnectionAfterOAuth();
-    }
+  void _initDeepLinks() {
+    _linkSubscription = _appLinks.uriLinkStream.listen((Uri? uri) {
+      if (uri != null && uri.toString().contains('oauth/facebook/success')) {
+        _handleOAuthSuccess();
+      }
+    }, onError: (err) {
+      print('Deep link error: $err');
+    });
   }
 
-  Future<void> _checkConnectionAfterOAuth() async {
-    if (_isCheckingConnection) return;
-    
-    _isCheckingConnection = true;
-    
-    // Wait a bit for the backend to process the OAuth callback
-    await Future.delayed(const Duration(seconds: 2));
-    
-    try {
-      await _refreshFromApi();
-      if (profile != null && mounted) {
-        _showSuccess('Facebook connected successfully!');
-      }
-    } catch (e) {
-      print('Connection check failed: $e');
-    } finally {
-      _isCheckingConnection = false;
+  Future<void> _handleOAuthSuccess() async {
+    await Future.delayed(const Duration(seconds: 1));
+    await _refreshFromApi();
+    if (profile != null && mounted) {
+      _showSuccess('Facebook connected successfully!');
     }
   }
 

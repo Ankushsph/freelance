@@ -134,24 +134,30 @@ router.get("/callback", async (req, res) => {
 
     console.log(`[Instagram] User ${user._id} connected successfully`);
 
-    // Success HTML
+    // Redirect back to app with success
     res.send(`
       <!DOCTYPE html>
       <html>
       <head>
         <title>Instagram Connected</title>
+        <meta http-equiv="refresh" content="2;url=konnectmedia://oauth/instagram/success">
         <style>
           body { font-family: Arial; background:#f0f0f0; text-align:center; padding:50px; }
-          .box { background:white; padding:30px; border-radius:10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+          .box { background:white; padding:30px; border-radius:10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width:400px; margin:0 auto; }
           .success { color: #28a745; font-size: 48px; margin-bottom: 10px; }
         </style>
+        <script>
+          setTimeout(function() {
+            window.location.href = 'konnectmedia://oauth/instagram/success';
+          }, 1000);
+        </script>
       </head>
       <body>
         <div class="box">
           <div class="success">✓</div>
           <h1>Instagram Connected!</h1>
-          <p>You can safely return to the app.</p>
-          <a href="/" style="display: inline-block; margin-top: 15px; padding: 10px 20px; background: #667eea; color: white; text-decoration: none; border-radius: 5px;">Back to Dashboard</a>
+          <p>Redirecting back to app...</p>
+          <p style="font-size: 12px; color: #666; margin-top: 20px;">If you're not redirected automatically, please close this window and return to the app.</p>
         </div>
       </body>
       </html>
