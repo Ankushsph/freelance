@@ -87,7 +87,7 @@ router.post('/create-order', verifyToken, async (req: AuthRequest, res) => {
     const orderData = {
       amount: PREMIUM_PRICE,
       currency: 'INR',
-      receipt: `receipt_${userId}_${Date.now()}`,
+      receipt: `rcpt_${Date.now()}`, // Keep it short - max 40 chars
       notes: {
         userId: userId,
         planType: 'premium'
