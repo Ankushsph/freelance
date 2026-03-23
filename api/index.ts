@@ -21,7 +21,7 @@ import twitterRoutes from "./routes/twitter.routes.js";
 import uploadRoutes from "./routes/upload.routes.js";
 import callbackRoutes from "./routes/callback.routers.js";
 import aiRouters from "./routes/ai.router.js";
-import boostRoutes from "./routes/boost.router.js";
+import boostRoutes from "./routes/boost.routes.js";
 import notificationRoutes from "./routes/notification.routes.js";
 import postsRoutes from "./routes/posts.routes.js";
 import analyticsRoutes from "./routes/analytics.routes.js";

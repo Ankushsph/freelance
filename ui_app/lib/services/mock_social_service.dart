@@ -20,7 +20,7 @@ class MockSocialService {
     if (token == null) return null;
 
     try {
-      final data = await ApiService.getInstagramProfile(token: token);
+      final data = await ApiService.getInstagramProfile();
       await AuthStorage.saveInstagramProfile(data);
       return SocialProfileMapper.instagram(data);
     } catch (_) {

@@ -54,7 +54,7 @@ class _UnifiedProfileScreenState extends State<UnifiedProfileScreen> {
 
     // Try to fetch each platform's profile
     try {
-      final ig = await ApiService.getInstagramProfile(token: '');
+      final ig = await ApiService.getInstagramProfile();
       accounts.add({
         'platform': 'instagram',
         'name': ig['username'] ?? 'Instagram',

@@ -97,7 +97,7 @@ class _InstagramProfileScreenState extends State<InstagramProfileScreen> {
         return;
       }
 
-      final data = await ApiService.getInstagramProfile(token: token);
+      final data = await ApiService.getInstagramProfile();
       await AuthStorage.saveInstagramProfile(data);
       
       if (mounted) {

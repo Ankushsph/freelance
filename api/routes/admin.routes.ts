@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { User } from "../models/User";
-import { Post } from "../models/Post";
-import { Trend } from "../models/Trend";
-import { Announcement } from "../models/Announcement";
-import { Ticket } from "../models/Ticket";
+import { User } from "../models/User.js";
+import { Post } from "../models/Post.js";
+import { Trend } from "../models/Trend.js";
+import { Announcement } from "../models/Announcement.js";
+import Ticket from "../models/Ticket.js";
 
 const router = Router();
 

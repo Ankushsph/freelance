@@ -81,7 +81,7 @@ class _PlatformProfileWidgetState extends State<PlatformProfileWidget> {
           posts = userPosts.map((p) => {
             'id': p.id,
             'content': p.content,
-            'mediaUrl': p.mediaUrl,
+            'mediaUrl': p.mediaUrls.isNotEmpty ? p.mediaUrls.first : null,
             'createdAt': p.createdAt,
           }).toList();
           isConnected = profile != null;

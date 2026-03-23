@@ -1,6 +1,6 @@
-import express from 'express';
-import Notification from '../models/Notification';
-import { verifyToken, AuthRequest } from '../middleware/auth';
+import express, { type Response } from 'express';
+import Notification from '../models/Notification.js';
+import { verifyToken, type AuthRequest } from '../middleware/auth.js';
 
 const router = express.Router();
 

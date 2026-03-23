@@ -1,8 +1,8 @@
-import express from 'express';
-import Boost from '../models/Boost';
-import Post from '../models/Post';
-import { verifyToken, AuthRequest } from '../middleware/auth';
-import { requirePremium } from '../middleware/premium';
+import express, { type Response } from 'express';
+import Boost from '../models/Boost.js';
+import { Post } from '../models/Post.js';
+import { verifyToken, type AuthRequest } from '../middleware/auth.js';
+import { requirePremium } from '../middleware/premium.js';
 
 const router = express.Router();
 

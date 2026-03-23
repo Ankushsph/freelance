@@ -241,7 +241,7 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> getInstagramProfile({required String token}) async {
+  static Future<Map<String, dynamic>> getInstagramProfile() async {
     final prefs = await SharedPreferences.getInstance();
     final token = prefs.getString(AuthKeys.token);
 
