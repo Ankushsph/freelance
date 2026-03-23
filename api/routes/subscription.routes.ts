@@ -1,9 +1,9 @@
 import { Router } from 'express';
 import { Subscription } from '../models/Subscription.js';
-import { User } from '../models/User.js';
 import { verifyToken } from '../middleware/auth.js';
-import type { Request, Response } from 'express';
+import type { Request } from 'express';
 import crypto from 'crypto';
+import Razorpay from 'razorpay';
 
 interface AuthRequest extends Request {
   user?: { id: string };
@@ -14,6 +14,20 @@ const router = Router();
 // Razorpay configuration
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || '';
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || '';
+
+// Initialize Razorpay instance only if credentials are available
+let razorpayInstance: Razorpay | null = null;
+if (RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET) {
+  try {
+    razorpayInstance = new Razorpay({
+      key_id: RAZORPAY_KEY_ID as string,
+      key_secret: RAZORPAY_KEY_SECRET as string,
+    });
+    console.log('Razorpay initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize Razorpay:', error);
+  }
+}
 
 // Premium plan price (in paise - ₹999 = 99900 paise)
 const PREMIUM_PRICE = 99900;
@@ -58,28 +72,44 @@ router.post('/create-order', verifyToken, async (req: AuthRequest, res) => {
   try {
     const userId = req.user!.id;
     
-    // Create Razorpay order
-    const orderId = `order_${Date.now()}_${userId}`;
+    // Validate Razorpay credentials and instance
+    if (!razorpayInstance || !RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) {
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Razorpay credentials not configured' 
+      });
+    }
     
-    const orderData = {
-      id: orderId,
-      amount: PREMIUM_PRICE,
+    // Create Razorpay order using official SDK
+    const options = {
+      amount: PREMIUM_PRICE, // amount in paise
       currency: 'INR',
-      receipt: `receipt_${userId}_${Date.now()}`
+      receipt: `receipt_${userId}_${Date.now()}`,
+      notes: {
+        userId: userId,
+        planType: 'premium'
+      }
     };
+    
+    const order = await razorpayInstance.orders.create(options);
+    
+    console.log('Razorpay order created:', order.id);
     
     res.json({
       success: true,
       data: {
-        orderId: orderData.id,
-        amount: orderData.amount,
-        currency: orderData.currency,
+        orderId: order.id,
+        amount: order.amount,
+        currency: order.currency,
         keyId: RAZORPAY_KEY_ID
       }
     });
-  } catch (error) {
-    console.error('Error creating order:', error);
-    res.status(500).json({ success: false, message: 'Failed to create subscription order' });
+  } catch (error: any) {
+    console.error('Error creating Razorpay order:', error);
+    res.status(500).json({ 
+      success: false, 
+      message: error.message || 'Failed to create subscription order' 
+    });
   }
 });
 
@@ -101,7 +131,7 @@ router.post('/verify-payment', verifyToken, async (req: AuthRequest, res) => {
     if (!isDemoPayment && RAZORPAY_KEY_SECRET && RAZORPAY_KEY_SECRET !== 'your_razorpay_key_secret') {
       const text = `${razorpayOrderId}|${razorpayPaymentId}`;
       const expectedSignature = crypto
-        .createHmac('sha256', RAZORPAY_KEY_SECRET)
+        .createHmac('sha256', RAZORPAY_KEY_SECRET as string)
         .update(text)
         .digest('hex');
       
@@ -188,6 +218,10 @@ router.get('/check-feature/:feature', verifyToken, async (req: AuthRequest, res)
   try {
     const userId = req.user!.id;
     const { feature } = req.params;
+    
+    if (!feature) {
+      return res.status(400).json({ success: false, message: 'Feature parameter required' });
+    }
     
     const subscription = await Subscription.findOne({ userId });
     
