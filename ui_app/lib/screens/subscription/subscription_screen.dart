@@ -34,28 +34,47 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     setState(() => _isProcessing = true);
 
     try {
+      print('Payment success response:');
+      print('Order ID: ${response.orderId}');
+      print('Payment ID: ${response.paymentId}');
+      print('Signature: ${response.signature}');
+      
       final success = await SubscriptionService.verifyPayment(
         orderId: response.orderId ?? '',
         paymentId: response.paymentId ?? '',
         signature: response.signature ?? '',
       );
 
+      print('Verification success: $success');
+
       if (success && mounted) {
+        // Reload subscription data
         await context.read<SubscriptionProvider>().loadSubscription();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Premium subscription activated!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.pop(context);
+        
+        // Wait a bit to ensure state is updated
+        await Future.delayed(const Duration(milliseconds: 500));
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Premium subscription activated!'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 3),
+            ),
+          );
+          // Return true to indicate successful upgrade
+          Navigator.pop(context, true);
+        }
       } else {
         _showError('Payment verification failed');
       }
     } catch (e) {
+      print('Error in payment success handler: $e');
       _showError(e.toString());
     } finally {
-      setState(() => _isProcessing = false);
+      if (mounted) {
+        setState(() => _isProcessing = false);
+      }
     }
   }
 

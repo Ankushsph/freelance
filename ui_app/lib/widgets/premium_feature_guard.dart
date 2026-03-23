@@ -111,14 +111,18 @@ class PremiumFeatureGuard extends StatelessWidget {
             child: const Text('Maybe Later'),
           ),
           ElevatedButton(
-            onPressed: () {
+            onPressed: () async {
               Navigator.pop(ctx);
-              Navigator.push(
+              final result = await Navigator.push(
                 context,
                 MaterialPageRoute(
                   builder: (_) => const SubscriptionScreen(),
                 ),
               );
+              // Reload subscription if upgrade was successful
+              if (result == true && context.mounted) {
+                await context.read<SubscriptionProvider>().loadSubscription();
+              }
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFF6A5AE0),
