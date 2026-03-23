@@ -46,6 +46,9 @@ class SubscriptionService {
         throw Exception('User not logged in');
       }
 
+      print('Creating order with token: ${token.substring(0, 20)}...');
+      print('API URL: $baseUrl/subscription/create-order');
+
       final response = await http.post(
         Uri.parse('$baseUrl/subscription/create-order'),
         headers: {
@@ -54,15 +57,23 @@ class SubscriptionService {
         },
       );
 
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        return data['data'];
+        if (data['success'] == true && data['data'] != null) {
+          return data['data'];
+        } else {
+          throw Exception(data['message'] ?? 'Invalid response format');
+        }
       } else {
-        throw Exception('Failed to create order');
+        final errorData = jsonDecode(response.body);
+        throw Exception(errorData['message'] ?? 'Failed to create order');
       }
     } catch (e) {
       print('Error creating order: $e');
-      throw Exception('Failed to create subscription order');
+      throw Exception('Failed to create subscription order: $e');
     }
   }
 

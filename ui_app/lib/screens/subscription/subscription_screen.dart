@@ -80,7 +80,13 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
 
     try {
       // Create Razorpay order
+      print('Creating Razorpay order...');
       final orderData = await SubscriptionService.createOrder();
+      
+      print('Order data received: $orderData');
+      print('Key ID: ${orderData['keyId']}');
+      print('Amount: ${orderData['amount']}');
+      print('Order ID: ${orderData['orderId']}');
 
       var options = {
         'key': orderData['keyId'],
@@ -93,8 +99,10 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         'theme': {'color': '#6A5AE0'}
       };
 
+      print('Opening Razorpay with options: $options');
       _razorpay.open(options);
     } catch (e) {
+      print('Error in _upgradeToPremium: $e');
       _showError('Failed to create order: ${e.toString()}');
       setState(() => _isProcessing = false);
     }
