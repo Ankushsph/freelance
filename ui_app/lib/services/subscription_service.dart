@@ -65,15 +65,23 @@ class SubscriptionService {
         if (data['success'] == true && data['data'] != null) {
           return data['data'];
         } else {
-          throw Exception(data['message'] ?? 'Invalid response format');
+          final errorMsg = data['message'] ?? 'Invalid response format';
+          final errorDetail = data['error'] ?? '';
+          throw Exception('$errorMsg${errorDetail.isNotEmpty ? ': $errorDetail' : ''}');
         }
       } else {
-        final errorData = jsonDecode(response.body);
-        throw Exception(errorData['message'] ?? 'Failed to create order');
+        try {
+          final errorData = jsonDecode(response.body);
+          final errorMsg = errorData['message'] ?? 'Failed to create order';
+          final errorDetail = errorData['error'] ?? '';
+          throw Exception('$errorMsg${errorDetail.isNotEmpty ? ': $errorDetail' : ''}');
+        } catch (e) {
+          throw Exception('Server error (${response.statusCode}): ${response.body}');
+        }
       }
     } catch (e) {
       print('Error creating order: $e');
-      throw Exception('Failed to create subscription order: $e');
+      rethrow;
     }
   }
 
