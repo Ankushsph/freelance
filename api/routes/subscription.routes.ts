@@ -33,6 +33,19 @@ if (RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET) {
 // Premium plan price (in paise - ₹999 = 99900 paise)
 const PREMIUM_PRICE = 99900;
 
+// Health check endpoint for Razorpay
+router.get('/razorpay-status', (req, res) => {
+  res.json({
+    success: true,
+    razorpay: {
+      keyIdConfigured: !!RAZORPAY_KEY_ID,
+      keySecretConfigured: !!RAZORPAY_KEY_SECRET,
+      instanceInitialized: !!razorpayInstance,
+      keyIdPrefix: RAZORPAY_KEY_ID ? RAZORPAY_KEY_ID.substring(0, 8) + '...' : 'Not set'
+    }
+  });
+});
+
 // GET user's current subscription
 router.get('/me', verifyToken, async (req: AuthRequest, res) => {
   try {
