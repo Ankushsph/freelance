@@ -3,8 +3,142 @@ import Boost from '../models/Boost.js';
 import { Post } from '../models/Post.js';
 import { verifyToken, type AuthRequest } from '../middleware/auth.js';
 import { requirePremium } from '../middleware/premium.js';
+import { transporter } from '../utils/mailer.js';
+import { boostEmailTemplate } from '../utils/boostTemplate.js';
 
 const router = express.Router();
+
+// SEND boost consultation request (book a slot with expert)
+router.post('/send', verifyToken, requirePremium, async (req: AuthRequest, res) => {
+  try {
+    const { userId, name, contact, timeSlot, message } = req.body;
+
+    // Validate required fields
+    if (!name || !contact || !timeSlot) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Name, contact, and time slot are required' 
+      });
+    }
+
+    // Validate time slot is in the future
+    const slotDate = new Date(timeSlot);
+    if (slotDate < new Date()) {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Time slot must be in the future' 
+      });
+    }
+
+    // Create boost consultation request
+    const boost = new Boost({
+      userId: req.user!.id,
+      postId: null, // No post associated with consultation
+      platform: 'consultation' as any, // Special type for consultation
+      budget: 0, // No budget for consultation
+      duration: 1, // 1 day default
+      targetAudience: {},
+      status: 'pending',
+      startDate: slotDate,
+      endDate: slotDate,
+      stats: {
+        impressions: 0,
+        clicks: 0,
+        spent: 0,
+        reach: 0,
+      },
+    });
+
+    await boost.save();
+
+    // Send email notification to admin
+    try {
+      const emailHtml = boostEmailTemplate({
+        id: boost._id.toString(),
+        name,
+        userId: req.user!.id,
+        contact,
+        timeSlot: slotDate.toLocaleString(),
+        message: message || null,
+      });
+
+      await transporter.sendMail({
+        from: process.env.MAIL_USER || 'noreply@konnectmedia.com',
+        to: process.env.ADMIN_EMAIL || process.env.MAIL_USER,
+        subject: '🚀 New Boost Consultation Request',
+        html: emailHtml,
+      });
+
+      console.log('✅ Boost consultation email sent to admin');
+    } catch (emailError: any) {
+      console.error('⚠️  Failed to send boost email:', emailError.message);
+      // Don't fail the request if email fails
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'Consultation request sent successfully',
+      data: {
+        id: boost._id,
+        timeSlot: slotDate,
+        status: 'pending',
+      },
+    });
+  } catch (error: any) {
+    console.error('Error creating boost consultation:', error);
+    res.status(500).json({ 
+      success: false,
+      message: error.message || 'Failed to send consultation request'
+    });
+  }
+});
+
+// GET boost action (approve/reject) - for admin email links
+router.get('/action', async (req, res) => {
+  try {
+    const { id, type } = req.query;
+
+    if (!id || !type) {
+      return res.status(400).send('Missing parameters');
+    }
+
+    const boost = await Boost.findById(id);
+    if (!boost) {
+      return res.status(404).send('Consultation request not found');
+    }
+
+    if (type === 'approve') {
+      boost.status = 'active';
+      await boost.save();
+      res.send(`
+        <html>
+          <body style="font-family: Arial; text-align: center; padding: 50px;">
+            <h1 style="color: #22c55e;">✅ Approved</h1>
+            <p>Consultation request has been approved.</p>
+            <p>The user will be notified.</p>
+          </body>
+        </html>
+      `);
+    } else if (type === 'reject') {
+      boost.status = 'cancelled';
+      await boost.save();
+      res.send(`
+        <html>
+          <body style="font-family: Arial; text-align: center; padding: 50px;">
+            <h1 style="color: #ef4444;">❌ Rejected</h1>
+            <p>Consultation request has been rejected.</p>
+            <p>The user will be notified.</p>
+          </body>
+        </html>
+      `);
+    } else {
+      res.status(400).send('Invalid action type');
+    }
+  } catch (error: any) {
+    console.error('Error processing boost action:', error);
+    res.status(500).send('Server error');
+  }
+});
 
 // CREATE boost campaign
 router.post('/', verifyToken, requirePremium, async (req: AuthRequest, res) => {

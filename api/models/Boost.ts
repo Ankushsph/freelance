@@ -2,8 +2,8 @@ import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IBoost extends Document {
   userId: mongoose.Types.ObjectId;
-  postId: mongoose.Types.ObjectId;
-  platform: 'instagram' | 'facebook' | 'linkedin' | 'twitter';
+  postId: mongoose.Types.ObjectId | null;
+  platform: 'instagram' | 'facebook' | 'linkedin' | 'twitter' | 'consultation';
   budget: number;
   duration: number; // days
   targetAudience: {
@@ -36,11 +36,12 @@ const BoostSchema: Schema = new Schema(
     postId: {
       type: Schema.Types.ObjectId,
       ref: 'Post',
-      required: true,
+      required: false,
+      default: null,
     },
     platform: {
       type: String,
-      enum: ['instagram', 'facebook', 'linkedin', 'twitter'],
+      enum: ['instagram', 'facebook', 'linkedin', 'twitter', 'consultation'],
       required: true,
     },
     budget: {
