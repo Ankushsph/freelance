@@ -84,8 +84,14 @@ export async function getPlatformAnalytics(
  */
 async function getFacebookAnalytics(user: any, days: number): Promise<PlatformAnalytics> {
   if (!user.facebookAccessToken) {
-    // Return dummy data for demo
-    return getDummyAnalytics('facebook', days);
+    // User not connected - return empty data
+    return {
+      platform: 'facebook',
+      connected: false,
+      overview: { impressions: 0, reach: 0, engagement: 0, followers: 0 },
+      history: [],
+      posts: [],
+    };
   }
 
   // If no page is selected but user has FB connected, get pages list
@@ -222,11 +228,26 @@ async function getFacebookAnalytics(user: any, days: number): Promise<PlatformAn
  */
 async function getLinkedInAnalytics(user: any, days: number): Promise<PlatformAnalytics> {
   if (!user.linkedinAccessToken) {
-    return getDummyAnalytics('linkedin', days);
+    // User not connected - return empty data
+    return {
+      platform: 'linkedin',
+      connected: false,
+      overview: { impressions: 0, reach: 0, engagement: 0, followers: 0 },
+      history: [],
+      posts: [],
+    };
   }
 
-  // For now, return dummy data - LinkedIn API integration can be added later
-  return getDummyAnalytics('linkedin', days);
+  // LinkedIn API integration - for now return empty data with connected status
+  // TODO: Implement LinkedIn analytics API calls
+  return {
+    platform: 'linkedin',
+    connected: true,
+    overview: { impressions: 0, reach: 0, engagement: 0, followers: 0 },
+    history: [],
+    posts: [],
+    permissionsError: false,
+  };
 }
 
 /**
@@ -234,11 +255,26 @@ async function getLinkedInAnalytics(user: any, days: number): Promise<PlatformAn
  */
 async function getTwitterAnalytics(user: any, days: number): Promise<PlatformAnalytics> {
   if (!user.twitterAccessToken) {
-    return getDummyAnalytics('twitter', days);
+    // User not connected - return empty data
+    return {
+      platform: 'twitter',
+      connected: false,
+      overview: { impressions: 0, reach: 0, engagement: 0, followers: 0 },
+      history: [],
+      posts: [],
+    };
   }
 
-  // For now, return dummy data - Twitter API integration can be added later
-  return getDummyAnalytics('twitter', days);
+  // Twitter API integration - for now return empty data with connected status
+  // TODO: Implement Twitter analytics API calls
+  return {
+    platform: 'twitter',
+    connected: true,
+    overview: { impressions: 0, reach: 0, engagement: 0, followers: 0 },
+    history: [],
+    posts: [],
+    permissionsError: false,
+  };
 }
 
 /**
@@ -246,8 +282,14 @@ async function getTwitterAnalytics(user: any, days: number): Promise<PlatformAna
  */
 async function getInstagramAnalytics(user: any, days: number): Promise<PlatformAnalytics> {
   if (!user.instagramAccessToken || !user.instagramUserId) {
-    // Return dummy data for demo
-    return getDummyAnalytics('instagram', days);
+    // User not connected - return empty data
+    return {
+      platform: 'instagram',
+      connected: false,
+      overview: { impressions: 0, reach: 0, engagement: 0, followers: 0 },
+      history: [],
+      posts: [],
+    };
   }
 
   try {

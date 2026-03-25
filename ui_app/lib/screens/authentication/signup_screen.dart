@@ -35,42 +35,42 @@ class _SignupScreenState extends State<SignupScreen> {
     setState(() => isLoading = true);
 
     try {
-      // Bypass OTP - directly create user account
-      final data = await ApiService.createUser(
-        name: _nameController.text.trim(),
+      // Send OTP to email
+      final otpSent = await ApiService.sendOtp(
         email: _emailController.text.trim(),
-        number: int.parse(_mobileController.text.trim()),
-        password: _passwordController.text.trim(),
+        purpose: 'signup',
       );
 
       if (!mounted) return;
 
-      // Save token and user data
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('jwt_token', data['token']!);
-      await prefs.setString('user_name', data['name']!);
-      await prefs.setString('user_email', data['email']!);
-      await prefs.setString(AuthKeys.token, data['token']!);
+      setState(() => isLoading = false);
 
-      // Try to fetch user profile
-      try {
-        await ApiService.getMe();
-      } catch (e) {
-        // Ignore profile fetch errors
-      }
-
-      if (!mounted) return;
-      
       // Show success message
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Account created successfully!"),
+        SnackBar(
+          content: Text(otpSent != null 
+            ? "OTP sent to your email! Check your inbox.\nDev OTP: $otpSent" 
+            : "OTP sent to your email! Check your inbox."),
           backgroundColor: Colors.green,
+          duration: const Duration(seconds: 5),
         ),
       );
 
-      // Navigate to home
-      Navigator.pushReplacementNamed(context, '/home');
+      // Navigate to OTP screen
+      Navigator.pushNamed(
+        context,
+        '/otp',
+        arguments: {
+          'email': _emailController.text.trim(),
+          'purpose': 'signup',
+          'userData': {
+            'name': _nameController.text.trim(),
+            'email': _emailController.text.trim(),
+            'number': int.parse(_mobileController.text.trim()),
+            'password': _passwordController.text.trim(),
+          },
+        },
+      );
     } catch (e) {
       if (!mounted) return;
       
@@ -88,10 +88,8 @@ class _SignupScreenState extends State<SignupScreen> {
           ),
         ),
       );
-    } finally {
-      if (mounted) {
-        setState(() => isLoading = false);
-      }
+      
+      setState(() => isLoading = false);
     }
   }
 

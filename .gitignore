@@ -15,3 +15,7 @@ ui_app/ios/Runner/Assets.xcassets/
 *.jpg
 *.jpeg
 *.webp
+
+# Secrets and credentials
+RENDER_ENV_COPY_PASTE.txt
+FIXES_APPLIED.txt
